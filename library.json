@@ -1,0 +1,20 @@
+{
+  "name": "mobzesplib",
+  "description": "Gerneric utilities MOBZystems ESP Library",
+  "keywords": "mobzystems",
+  "authors": {
+    "name": "MOBZystems",
+    "url": "https://github.com/mobzystems",
+    "maintainer": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mobzystems/mobzesplib"
+  },
+  "version": "0.1.0",
+  "framework": "arduino",
+  "platforms": "*",
+  "build": {
+    "libArchive": false
+  }
+}
