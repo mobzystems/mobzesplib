@@ -1,13 +1,18 @@
 #include "configuration.h"
 
 // Read the configuration from a file
-Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_values)
+Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_values) :
+  count(0),
+  buffer(NULL),
+  keys(NULL),
+  values(NULL)
 {
   File file = fileSystem->open(filename, "r");
 
   if (!file)
   {
     Log::logWarning("[Configuration] Could not open '%s'", filename);
+
     return;
   }
 
@@ -96,10 +101,13 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_va
 Configuration::~Configuration()
 {
   Log::logTrace("[Configuration] Cleaning up");
-  delete this->keys;
-  delete this->values;
+  if (this->keys != NULL)
+    delete this->keys;
+  if (this->values != NULL)
+    delete this->values;
+  if (this->buffer != NULL)
+    delete buffer;
   this->count = 0;
-  delete buffer;
 }
 
 // Send the configuration to log
