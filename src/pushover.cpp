@@ -1,6 +1,10 @@
 #include "pushover.h"
 
-#include <HTTPClient.h>
+#if defined(ESP32)
+#include <HttpClient.h>
+#elif defined(ESP8266)
+#include <ESP8266HttpClient.h>
+#endif
 #include "logging.h"
 
 PushOverClient::PushOverClient(WiFiClient &client, const char *api_key) :

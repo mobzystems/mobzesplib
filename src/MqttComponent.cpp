@@ -16,8 +16,8 @@ MqttComponent::MqttComponent(
   Component("Mqtt Component"),
   _username(username),
   _password(password),
-  _subscribe(subscribe),
-  _mqttClient(broker, portNumber, receive, client)
+  _mqttClient(broker, portNumber, receive, client),
+  _subscribe(subscribe)
 {}
 
 /***
