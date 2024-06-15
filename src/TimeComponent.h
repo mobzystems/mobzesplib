@@ -6,6 +6,9 @@
 #include "components.h"
 #include "logging.h"
 
+/***
+ * Component-version of eztime
+ */
 class TimeComponent: public Component
 {
   private:
@@ -13,9 +16,12 @@ class TimeComponent: public Component
     Timezone _TZ;
 
   public:
+    // Constructor with a time zone name, e.g. Europe/Amsterdam
     TimeComponent(const char *timezoneName);
+    // A pointer to the interal timezone object
     Timezone *TZ();
 
+    // Required by Component
     void setup();
     void loop();
 };

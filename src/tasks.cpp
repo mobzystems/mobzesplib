@@ -1,6 +1,8 @@
 #include "tasks.h"
 #include "logging.h"
 
+// Create a new task with a name, an interval in milliseconds and a function to call
+// when the task should run
 Task::Task(String name, Milliseconds interval, bool (*taskFunction)(Task *task)) :
   _name(name),
   _interval(interval),
@@ -8,7 +10,10 @@ Task::Task(String name, Milliseconds interval, bool (*taskFunction)(Task *task))
   _nextRunTime(0) // ASAP
 {}
 
-void Task::runIfRequired(Milliseconds currentMilliseconds) {
+// Run the task if it should, i.e. when the interval has passed since the last time the
+// task was run
+void Task::runIfRequired(Milliseconds currentMilliseconds)
+{
   if (currentMilliseconds >= this->_nextRunTime)
   {
     if (this->_taskFunction != NULL)
@@ -25,28 +30,32 @@ void Task::runIfRequired(Milliseconds currentMilliseconds) {
   }
 }
 
+// Tasks constructor
 Tasks::Tasks(): Component("Tasks")
 {}
 
-// Add a task. return the task index
+// Add a task. Return the tasks index
 int Tasks::add(String name, Milliseconds interval, bool (*taskFunction)(Task *task))
 {
+  // Create a task with the parameters
   Task *newTask = new Task(name, interval, taskFunction);
+  // Store it in the task list
   this->tasks.push_back(newTask);
   // Return task index
   return this->tasks.size() - 1;
 }
 
-void Tasks::setup() {
-  Log::logInformation("Setting up Tasks");
+// The setup() function is required by the Component base class
+// but it doesn't actually do anything
+void Tasks::setup()
+{
+  Log::logTrace("Setting up Tasks");
 }
 
+// The loop() function from Component. Asks each task to run if it should
 void Tasks::loop()
 {
   Milliseconds currentMilliseconds = millis();
-  for (int i = 0; i < this->tasks.size(); i++)
-  {
-    Task *task = tasks[i];
+  for (auto task: tasks)
     task->runIfRequired(currentMilliseconds);
-  }
 }

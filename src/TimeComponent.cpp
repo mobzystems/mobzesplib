@@ -5,21 +5,28 @@ TimeComponent::TimeComponent(const char *timezoneName) :
 	_timezoneName(timezoneName)
 {}
 
-Timezone *TimeComponent::TZ() {
+Timezone *TimeComponent::TZ()
+{
 	return &this->_TZ;
 }
 
-void TimeComponent::setup() {
+// Set up the internal Timezone object
+void TimeComponent::setup()
+{
   this->_TZ.setLocation(this->_timezoneName);
   this->_TZ.setDefault();
   delay(250);
+	Log::logTrace("[TimeComponent] Waiting for synchronization...");
   waitForSync(0);
 
+	// Pass the time zone component to Log
 	Log::setTimezone(&this->_TZ);
 
 	Log::logTrace("[TimeComponent] Time in time zone '%s' is '%s'", this->_timezoneName.c_str(), this->_TZ.dateTime().c_str());
 }
 
-void TimeComponent::loop() {
+// Call eztime's events()
+void TimeComponent::loop()
+{
   events();
 }
