@@ -1,9 +1,11 @@
-#include <Arduino.h>
-
 #ifndef __TASKS_H__
 #define __TASKS_H__
 
-#define MAX_TASKS 10
+#include <Arduino.h>
+#include <vector>
+
+#include "components.h"
+
 typedef unsigned long Milliseconds;
 
 class Task
@@ -18,15 +20,21 @@ class Task
     // Task();
     // Constructor with a task. If the task function returns true, it continues to run
     Task(String name, Milliseconds interval, bool (*taskFunction)(Task *task));
-
-    // The global list of MAX_TASKS tasks
-    static Task **tasks;
-    // The number of global tasks
-    static int taskCount;
-
-    static int add(String name, Milliseconds interval, bool (*taskFunction)(Task *task));
-
-    static void loop();
+    void runIfRequired(Milliseconds currentMilliseconds);
 };
 
+class Tasks: public Component {
+  private:
+    // The list of tasks
+    std::vector<Task *> tasks;
+
+  public:
+    Tasks();
+
+    int add(String name, Milliseconds interval, bool (*taskFunction)(Task *task));
+
+    // Component implementations
+    void setup();
+    void loop();
+};
 #endif

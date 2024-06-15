@@ -1,0 +1,65 @@
+#include "WifiComponent.h"
+#include "logging.h"
+
+#if defined(ESP32)
+#include <WiFi.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#endif
+
+// Create a new WiFiComponent with host name and wifi credentials, plus an optional connection check
+WifiComponent::WifiComponent(const char *hostname, const char *ssid, const char *password, unsigned long checkInterval, uint32_t waitTime)
+    : Component("Wifi Component"),
+      _hostname(hostname),
+      _ssid(ssid),
+      _password(password),
+      _intervalMs(checkInterval),
+      _waitMs(waitTime),
+      _lastCheckTime(0)
+{
+}
+
+void WifiComponent::setup()
+{
+  // --- Configure WIFI ---
+  WiFi.persistent(false);
+  WiFi.mode(WIFI_STA);
+  WiFi.setHostname(this->_hostname.c_str());
+  WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+  Log::logDebug("[WifiComponent] Connecting to WiFi network '%s'...", this->_ssid.c_str());
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(200);
+    Log::logTrace("[WifiComponent] Still connecting...");
+  }
+  if (WiFi.status() == WL_CONNECTED)
+    Log::logInformation("[WifiComponent] Connected %s to '%s' at %s (MAC %s)", WiFi.getHostname(), this->_ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
+  else
+    Log::logCritical("[WifiComponent] Cannot connect to WiFi");
+}
+
+void WifiComponent::loop()
+{
+  if (this->_intervalMs == 0)
+    return;
+
+  if (millis() > this->_lastCheckTime + this->_intervalMs)
+  {
+    Log::logDebug("[WifiComponent] Checking WiFi-connection...");
+
+    // if WiFi is down, try reconnecting
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      Log::logInformation("[WifiComponent] Reconnecting to WiFi...");
+      WiFi.disconnect();
+      delay(this->_waitMs);
+      WiFi.reconnect();
+      Log::logInformation("[WifiComponent] Reconnected.");
+      // publish_status("WiFi reconnected");
+    }
+    else
+      Log::logDebug("[WifiComponent] WiFi is connected.");
+
+    this->_lastCheckTime = millis();
+  }
+}
