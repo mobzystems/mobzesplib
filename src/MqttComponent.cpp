@@ -61,8 +61,10 @@ void MqttComponent::setup()
 // loop() for Mqtt
 void MqttComponent::loop()
 {
-  if (!this->_mqttClient.connected())
+  if (!this->_mqttClient.connected()) {
+    Log::logWarning("[MqttComponent] Connection lost");
     this->reconnect();
+  }
 
   this->_mqttClient.loop();
 }
