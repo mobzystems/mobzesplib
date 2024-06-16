@@ -6,8 +6,8 @@
 Task::Task(String name, Milliseconds interval, bool (*taskFunction)(Task *task)) :
   _name(name),
   _interval(interval),
-  _taskFunction(taskFunction),
-  _nextRunTime(0) // ASAP
+  _nextRunTime(0), // ASAP
+  _taskFunction(taskFunction)
 {}
 
 // Run the task if it should, i.e. when the interval has passed since the last time the
