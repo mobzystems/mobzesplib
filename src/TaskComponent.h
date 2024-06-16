@@ -1,5 +1,5 @@
-#ifndef __TASKS_H__
-#define __TASKS_H__
+#ifndef __TASKCOMPONENT_H__
+#define __TASKCOMPONENT_H__
 
 #include <Arduino.h>
 #include <vector>

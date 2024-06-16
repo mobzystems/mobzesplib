@@ -23,13 +23,12 @@ class Component {
 
 /***
  * Static class for registering components and calling setup()/loop() on them
+ * When a component is added, its setup() method is called.
  * 
  * Usage:
  *  In setup():
  *    Components::add(new SomeComponent(...));
  *    Components::add(new SomeOtherComponent(...));
- * 
- *    Components::setup();
  * 
  *  In loop():
  *    Components::loop();
@@ -40,10 +39,8 @@ class Components {
     static std::vector<Component *> components;
 
   public:
-    // Add a component
-    static void add(Component *component);
-    // Call setup() on all components
-    static void setup();
+    // Add a component and return it
+    static Component *add(Component *component);
     // Call loop() on all components
     static void loop();
 };

@@ -1,4 +1,4 @@
-#include "tasks.h"
+#include "TaskComponent.h"
 #include "logging.h"
 
 // Create a new task with a name, an interval in milliseconds and a function to call

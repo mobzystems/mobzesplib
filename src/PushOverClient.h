@@ -1,5 +1,5 @@
-#ifndef __PUSHOVER_H__
-#define __PUSHOVER_H__
+#ifndef __PUSHOVERCLIENT_H__
+#define __PUSHOVERCLIENT_H__
 
 #include <Arduino.h>
 #include <WiFiClient.h>
