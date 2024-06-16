@@ -6,8 +6,8 @@
 
 class Configuration {
   private:
-    char *buffer;
     size_t count;
+    char *buffer;
     const char **keys;
     const char **values;
 
