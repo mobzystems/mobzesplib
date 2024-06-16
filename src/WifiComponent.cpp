@@ -1,11 +1,7 @@
 #include "WifiComponent.h"
 #include "logging.h"
 
-#if defined(ESP32)
-#include <WiFi.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#endif
+#include "Specific_ESP_Wifi.h"
 
 // Create a new WiFiComponent with host name and wifi credentials, plus an optional connection check
 WifiComponent::WifiComponent(

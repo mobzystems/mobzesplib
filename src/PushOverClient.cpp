@@ -1,7 +1,6 @@
 #include "PushOverClient.h"
 
-#include <ESP_HttpClient.h>
-
+#include "ESP_HttpClient.h"
 #include "logging.h"
 
 PushOverClient::PushOverClient(WiFiClient &client, const char *api_key) :

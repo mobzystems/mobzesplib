@@ -1,10 +1,6 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
-#if defined(ESP32)
-#include <WiFi.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#endif
+#include "Specific_ESP_Wifi.h"
 
 #include "components.h"
 
