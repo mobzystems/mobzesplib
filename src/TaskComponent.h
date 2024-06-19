@@ -18,12 +18,12 @@ class Task
     String _name;
     Milliseconds _interval;
     Milliseconds _nextRunTime;
-    bool (*_taskFunction)(Task *task);
+    void (*_taskFunction)();
 
   public:
     // Constructor with a task name, interval and function
     // If the task function returns true, it continues to run
-    Task(String name, Milliseconds interval, bool (*taskFunction)(Task *task));
+    Task(String name, Milliseconds interval, void (*taskFunction)());
 
     // Run the task if it should
     void runIfRequired(Milliseconds currentMilliseconds);
@@ -42,7 +42,7 @@ class Tasks: public Component {
     Tasks();
 
     // Add a task to the list
-    int add(String name, Milliseconds interval, bool (*taskFunction)(Task *task));
+    int add(String name, Milliseconds interval, void (*taskFunction)());
 
     // Component implementations
     void setup();
