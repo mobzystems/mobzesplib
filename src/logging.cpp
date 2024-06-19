@@ -27,11 +27,11 @@ void Log::logMessage(LOGLEVEL level, const char *format, ...)
 
   if (level >= logLevel)
   {
-    if (timezone != NULL && timeFormat != NULL)
+    if (timezone != NULL && timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
     {
       Serial.print(timezone->dateTime(timeFormat).c_str());
     }
-    char loc_buf[256];
+    char loc_buf[MAX_LOGMESSAGE_SIZE];
     int len = vsnprintf(loc_buf, sizeof(loc_buf), format, args);
     if (len >= 0 && (size_t)len < sizeof(loc_buf))
     {
@@ -71,7 +71,7 @@ void Log::logMessage(LOGLEVEL level, const char *format, ...)
     }
     else
     {
-      Serial.printf("Error: vsnprintf returned %d\n", len);
+      Serial.printf("[Log::logMessage] Error: vsnprintf returned %d\n", len);
     }
   }
   va_end(args);

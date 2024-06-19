@@ -5,6 +5,10 @@
 
 #define LOG_DEFAULT_TIME_FORMAT "Y-m-d H:i:s "
 
+#ifndef MAX_LOGMESSAGE_SIZE
+  #define MAX_LOGMESSAGE_SIZE 256
+#endif
+
 class Log
 {
 public:
