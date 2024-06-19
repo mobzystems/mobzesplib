@@ -19,6 +19,10 @@ class Component {
     // Pure virtual (must-override) functions
     virtual void setup() = 0;
     virtual void loop() = 0;
+
+    // Supplied by Components
+     void setStatus(int statusCode, Log::LOGLEVEL level, const char *format, ...);
+     void setStatus(int statucCode);
 };
 
 /***
@@ -37,11 +41,17 @@ class Components {
   private:
     // The list of components
     static std::vector<Component *> components;
+    static void (*status)(const char *componentName, int statusCode, Log::LOGLEVEL, const char *message);
 
   public:
     // Add a component and return it
     static Component *add(Component *component);
     // Call loop() on all components
     static void loop();
+
+    // Status function, handy during startup (but can be used anywhere)
+    static void setStatusHandler(void (*handler)(const char *componentName, int statusCode, Log::LOGLEVEL, const char *message)) { Components::status = handler; }
+
+    friend class Component;
 };
 #endif
