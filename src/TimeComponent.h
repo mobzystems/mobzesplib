@@ -14,10 +14,11 @@ class TimeComponent: public Component
   private:
     String _timezoneName;
     Timezone _TZ;
+    uint16_t _syncTimeout;
 
   public:
     // Constructor with a time zone name, e.g. Europe/Amsterdam
-    TimeComponent(const char *timezoneName);
+    TimeComponent(const char *timezoneName, uint16_t syncTimeout = 0);
     // A pointer to the interal timezone object
     Timezone *TZ();
 
