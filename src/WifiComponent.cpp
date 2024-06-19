@@ -16,7 +16,7 @@ WifiComponent::WifiComponent(
   // The wait time during a reconnect
   uint32_t waitTime
 ) :
-  Component("Wifi Component"),
+  Component("Wifi"),
   _hostname(hostname),
   _ssid(ssid),
   _password(password),
@@ -36,17 +36,21 @@ void WifiComponent::setup()
 
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
 
-  Log::logDebug("[WifiComponent] Connecting to WiFi network '%s'...", this->_ssid.c_str());
+  Log::logDebug("[%s] Connecting to WiFi network '%s'...", name(), this->_ssid.c_str());
+  setStatus(1000, Log::LOGLEVEL::Information, "Connecting");
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(200);
-    Log::logTrace("[WifiComponent] Still connecting...");
+    Log::logTrace("[%s] Still connecting...", name());
   }
 
-  if (WiFi.status() == WL_CONNECTED)
-    Log::logInformation("[WifiComponent] Connected '%s' to '%s' at %s (MAC %s)", WiFi.getHostname(), this->_ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
-  else
-    Log::logCritical("[WifiComponent] Cannot connect to WiFi");
+  if (WiFi.status() == WL_CONNECTED) {
+    setStatus(2000, Log::LOGLEVEL::Information, "Connected");
+    Log::logInformation("[%s] Connected '%s' to '%s' at %s (MAC %s)", name(), WiFi.getHostname(), this->_ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
+  } else {
+    setStatus(9000, Log::LOGLEVEL::Error, "NOT connected");
+    Log::logCritical("[%s] Cannot connect to WiFi", name());
+  }
 }
 
 // Check for a lost connection and reconnect, but only if the interval is not 0
@@ -57,20 +61,20 @@ void WifiComponent::loop()
 
   if (millis() > this->_lastCheckTime + this->_intervalMs)
   {
-    Log::logDebug("[WifiComponent] Checking WiFi-connection...");
+    Log::logDebug("[%s] Checking connection...", name());
 
     // if WiFi is down, try reconnecting
     if (WiFi.status() != WL_CONNECTED)
     {
-      Log::logInformation("[WifiComponent] Reconnecting to WiFi...");
+      Log::logInformation("[%s] Reconnecting...", name());
       WiFi.disconnect();
       delay(this->_waitMs);
       WiFi.reconnect();
-      Log::logInformation("[WifiComponent] Reconnected.");
+      Log::logInformation("[%s] Reconnected.", name());
       // publish_status("WiFi reconnected");
     }
     else
-      Log::logDebug("[WifiComponent] WiFi is connected.");
+      Log::logDebug("[%s] Connected.", name());
 
     this->_lastCheckTime = millis();
   }

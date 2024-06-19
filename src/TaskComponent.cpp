@@ -18,7 +18,7 @@ void Task::runIfRequired(Milliseconds currentMilliseconds)
   {
     if (this->_taskFunction != NULL)
     {
-      Log::logTrace("Running task '%s'...", this->_name.c_str());
+      Log::logTrace("[%s] Running...", this->_name.c_str());
       (*this->_taskFunction)();
       this->_nextRunTime = currentMilliseconds + this->_interval;
     }
@@ -26,7 +26,7 @@ void Task::runIfRequired(Milliseconds currentMilliseconds)
 }
 
 // Tasks constructor
-Tasks::Tasks(): Component("Tasks")
+Tasks::Tasks() : Component("Tasks")
 {}
 
 // Add a task. Return the tasks index
@@ -44,7 +44,7 @@ int Tasks::add(String name, Milliseconds interval, void (*taskFunction)())
 // but it doesn't actually do anything
 void Tasks::setup()
 {
-  Log::logTrace("Setting up Tasks");
+  Log::logTrace("[%s] Setting up Tasks", name());
 }
 
 // The loop() function from Component. Asks each task to run if it should
