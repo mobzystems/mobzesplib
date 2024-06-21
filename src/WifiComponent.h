@@ -2,6 +2,7 @@
 #define __WIFI_COMPONENT_H__
 
 #include "components.h"
+#include "WiFiClient.h"
 
 /***
  * A Wifi component that connects to a WiFi network and optionally reconnects
@@ -16,9 +17,12 @@ class WifiComponent: public Component {
     uint32_t _waitMs;
 
     unsigned long _lastCheckTime;
+    WiFiClient _wifiClient;
 
   public:
     WifiComponent(const char *hostname, const char *ssid, const char *password, unsigned long checkInterval = 30000, uint32_t waitTime = 2000);
+
+    WiFiClient *wifiClient() { return &this->_wifiClient; }
 
     // Required by Component
     void setup();

@@ -18,7 +18,7 @@ class MqttComponent: public Component {
 
   public:
     MqttComponent(
-      Client &client, 
+      Client *client, 
       const char *broker, 
       uint16_t portNumber,
       const char *username,

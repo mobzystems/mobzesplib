@@ -5,7 +5,7 @@
  * Create a new MqttComponent
  */
 MqttComponent::MqttComponent(
-  Client &client, 
+  Client *client, 
   const char *broker, 
   uint16_t portNumber, 
   const char *username, 
@@ -17,7 +17,7 @@ MqttComponent::MqttComponent(
   Component("Mqtt"),
   _username(username),
   _password(password),
-  _mqttClient(broker, portNumber, receive, client),
+  _mqttClient(broker, portNumber, receive, *client),
   _subscribe(subscribe),
   _intervalMs(intervalMs)
 {}

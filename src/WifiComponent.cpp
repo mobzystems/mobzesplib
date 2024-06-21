@@ -71,10 +71,9 @@ void WifiComponent::loop()
       delay(this->_waitMs);
       WiFi.reconnect();
       Log::logInformation("[%s] Reconnected.", name());
-      // publish_status("WiFi reconnected");
     }
     else
-      Log::logDebug("[%s] Connected.", name());
+      Log::logDebug("[%s] Still connected.", name());
 
     this->_lastCheckTime = millis();
   }
