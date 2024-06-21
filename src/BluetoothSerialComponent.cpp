@@ -1,5 +1,6 @@
 #include "BluetoothSerialComponent.h"
 
+#ifdef ESP32
 BluetoothSerialComponent::BluetoothSerialComponent(const char *hostname, void (*onDataAvailable)(int)) :
   Component("BTSerial"),
   _hostname(hostname),
@@ -16,3 +17,4 @@ void BluetoothSerialComponent::loop() {
   if (this->_serialBT.available())
     this->_onDataAvailable(this->_serialBT.read());
 }
+#endif

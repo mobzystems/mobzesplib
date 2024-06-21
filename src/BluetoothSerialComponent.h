@@ -1,6 +1,7 @@
 #ifndef __BLUETOOTHSERIALCOMPONENT_H__
 #define __BLUETOOTHSERIALCOMPONENT_H__
 
+#ifdef ESP32
 #include <Arduino.h>
 #include "components.h"
 #include "BluetoothSerial.h"
@@ -25,5 +26,5 @@ class BluetoothSerialComponent: public Component {
     void setup();
     void loop();
 };
-
+#endif // ESP32
 #endif

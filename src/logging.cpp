@@ -32,8 +32,6 @@ void Log::setTimezone(Timezone *timezone, const char *format)
 
 void Log::logMessage(LOGLEVEL level, const char *format, ...)
 {
-  static bool in_callback = false;
-
   va_list args;
   va_start(args, format);
 
