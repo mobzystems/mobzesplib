@@ -19,7 +19,7 @@ class BluetoothSerialComponent: public Component {
   public:
     BluetoothSerialComponent(const char *hostname, void (*onDataAvailable)(int));
 
-    BluetoothSerial &serialBT(void) { return this->_serialBT; }
+    BluetoothSerial *serialBT(void) { return &this->_serialBT; }
     const char *hostname() { return this->_hostname; }
 
     void setup();
