@@ -9,8 +9,9 @@ DigitalPinWatcherComponent::DigitalPinWatcherComponent(uint8_t pinNumber, uint8_
 {}
 
 void DigitalPinWatcherComponent::setup() {
-  // Configure the ping
+  // Configure the pin
   pinMode(this->_pinNumber, this->_inputMode);
+  // Read its initial value
   this->_lastValue = digitalRead(this->_pinNumber);
   Log::logDebug("[%s] Pin %d is initially %d", this->name(), this->_pinNumber, this->_lastValue);
 }
