@@ -2,14 +2,26 @@
 
 #include "logging.h"
 
-Log::LOGLEVEL Log::logLevel = Log::Information;
 Timezone *Log::timezone = NULL;
 const char *Log::timeFormat = LOG_DEFAULT_TIME_FORMAT;
-void (*Log::callback)(LOGLEVEL level, const char *message) = NULL;
 
-void Log::setLogLevel(LOGLEVEL level)
+// The default logger is the serial logger with level Information
+// Call setSerialLogLevel to change this
+std::vector<Logger *> Log::_loggers = { new SerialLogger(Log::LOGLEVEL::Information) };
+
+// Add a logger to the collection of loggers
+void Log::addLogger(Logger *logger) {
+  _loggers.push_back(logger);
+}
+
+void Log::setSerialLogLevel(LOGLEVEL level)
 {
-  Log::logLevel = level;
+  for (auto logger: Log::_loggers) {
+    if (logger->is(SerialLogger::name)) {
+      logger->setLogLevel(level);
+      break;
+    }
+  }
 }
 
 void Log::setTimezone(Timezone *timezone, const char *format)
@@ -25,54 +37,60 @@ void Log::logMessage(LOGLEVEL level, const char *format, ...)
   va_list args;
   va_start(args, format);
 
-  if (level >= logLevel)
-  {
-    if (timezone != NULL && timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
-    {
-      Serial.print(timezone->dateTime(timeFormat).c_str());
-    }
-    char loc_buf[MAX_LOGMESSAGE_SIZE];
-    int len = vsnprintf(loc_buf, sizeof(loc_buf), format, args);
-    if (len >= 0 && (size_t)len < sizeof(loc_buf))
-    {
-      switch (level)
-      {
-      case Trace:
-        Serial.print("TRC: ");
-        break;
-      case Debug:
-        Serial.print("DBG: ");
-        break;
-      case Information:
-        Serial.print("INF: ");
-        break;
-      case Warning:
-        Serial.print("WRN: ");
-        break;
-      case Error:
-        Serial.print("ERR: ");
-        break;
-      case Critical:
-        Serial.print("CRT: ");
-        break;
-      default:
-        Serial.print("???: ");
-        break;
-      }
-      Serial.print(loc_buf);
-      Serial.print("\n");
+  char loc_buf[MAX_LOGMESSAGE_SIZE + 1] = "";
 
-      // Call the callback (but not recursively!)
-      if (!in_callback && callback != NULL) {
-        in_callback = true;
-        (*callback)(level, loc_buf);
-        in_callback = false;
-      }
-    }
-    else
-    {
-      Serial.printf("[Log::logMessage] Error: vsnprintf returned %d\n", len);
-    }
+  char *p = loc_buf;
+
+  // Add time information if available
+  if (timezone != NULL && timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
+    p = stpcpy(p, timezone->dateTime(timeFormat).c_str());
+
+  // Add the log level information
+  const char *lvl;
+  switch (level)
+  {
+  case Trace:
+    lvl = "TRC: ";
+    break;
+  case Debug:
+    lvl = "DBG: ";
+    break;
+  case Information:
+    lvl = "INF: ";
+    break;
+  case Warning:
+    lvl = "WRN: ";
+    break;
+  case Error:
+    lvl = "ERR: ";
+    break;
+  case Critical:
+    lvl = "CRT: ";
+    break;
+  default:
+    lvl = "???: ";
+    break;
   }
+  p = stpcpy(p, lvl);
+
+  // Print the message info the rest of the buffer
+  vsnprintf(p, sizeof(loc_buf) - (p - loc_buf), format, args);
+    for (auto logger: Log::_loggers)
+      logger->println(level, loc_buf);
+
   va_end(args);
 }
+
+bool Logger::println(Log::LOGLEVEL level, const char *message) {
+  if (level < this->_minLevel)
+    return false;
+
+  if (this->_destination != NULL)  
+    this->_destination->println(message);
+  else if (this->_printFunction != NULL)
+    this->_printFunction(message);
+    
+  return true;
+}
+
+const char *SerialLogger::name = "SerialLogger";
