@@ -1,3 +1,6 @@
+#ifndef __MQTT_COMPONENT_H__
+#define __MQTT_COMPONENT_H__
+
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include "Specific_ESP_Wifi.h"
@@ -32,3 +35,4 @@ class MqttComponent: public Component {
     void setup();
     void loop();
 };
+#endif

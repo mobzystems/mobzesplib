@@ -1,8 +1,8 @@
-#include <fs.h>
-#include "logging.h"
-
 #ifndef __CONFIGURATION_H__
 #define __CONFIGURATION_H__
+
+#include <fs.h>
+#include "logging.h"
 
 class Configuration {
   private:
