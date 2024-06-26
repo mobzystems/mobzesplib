@@ -26,6 +26,9 @@ void TimeComponent::setup()
     setStatus(300, Log::LOGLEVEL::Information, "Initialized");
     Log::logDebug("[%s] Time in time zone '%s' is '%s'", name(), this->_timezoneName.c_str(), this->_TZ.dateTime().c_str());
   }
+
+  // Notify the logging system we have time
+  Log::setTimezone(&this->_TZ);
 }
 
 // Call eztime's events()
