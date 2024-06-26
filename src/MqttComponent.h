@@ -13,7 +13,7 @@ class MqttComponent: public Component {
     String _password;
     PubSubClient _mqttClient;
     void (*_subscribe)(PubSubClient *);
-    void (*_receive)(char *topic, byte *payload, unsigned int length);
+    void (*_receive)(const char *topic, const byte *payload, unsigned int length);
     unsigned long _intervalMs;
     unsigned long _lastCheckTime;
 
@@ -27,7 +27,7 @@ class MqttComponent: public Component {
       const char *username,
       const char *password,
       void (*subscribe)(PubSubClient *) = NULL,
-      void (*receive)(char *topic, byte *payload, unsigned int length) = NULL,
+      void (*receive)(const char *topic, const byte *payload, unsigned int length) = NULL,
       unsigned long intervalMs = 30000
     );
     PubSubClient *mqttClient() { return &this->_mqttClient; }

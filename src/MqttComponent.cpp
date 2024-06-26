@@ -11,7 +11,7 @@ MqttComponent::MqttComponent(
   const char *username, 
   const char *password, 
   void (*subscribe)(PubSubClient *), 
-  void (*receive)(char *topic, byte *payload, unsigned int length),
+  void (*receive)(const char *topic, const byte *payload, unsigned int length),
   unsigned long intervalMs
 ) :
   Component("Mqtt"),
