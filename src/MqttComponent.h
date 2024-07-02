@@ -11,6 +11,7 @@ class MqttComponent: public Component {
   private:
     String _username;
     String _password;
+    String _clientId;
     PubSubClient _mqttClient;
     void (*_subscribe)(PubSubClient *);
     void (*_receive)(const char *topic, const byte *payload, unsigned int length);
@@ -26,6 +27,7 @@ class MqttComponent: public Component {
       uint16_t portNumber,
       const char *username,
       const char *password,
+      const char *clientId,
       void (*subscribe)(PubSubClient *) = NULL,
       void (*receive)(const char *topic, const byte *payload, unsigned int length) = NULL,
       unsigned long intervalMs = 30000
