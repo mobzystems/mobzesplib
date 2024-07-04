@@ -18,7 +18,7 @@ Application::Application(size_t maxConfigValues) :
   _ota(NULL),
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
-  _restartDelay(-1)
+  _restartDelay((unsigned long)-1)
 {
   Log::logDebug("[Application] Starting...");
 
@@ -58,6 +58,11 @@ void Application::setup() {
 
   Components::add(this->_ota = new OtaComponent(80));
 
+  const char *otaUsername = this->config("ota-username", NULL);
+  const char *otaPassword = this->config("ota-password", NULL);
+  if (otaUsername != NULL && otaPassword != NULL)
+    ElegantOTA.setAuth(otaUsername, otaPassword);
+    
   Log::logDebug("[Application] booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-M-d H:i:s").c_str());
 }
 
@@ -67,7 +72,7 @@ void Application::setup() {
 void Application::loop() {
   Components::loop();
 
-  if (this->_restartDelay != -1) {
+  if (this->_restartDelay != (unsigned long)-1) {
     Log::logWarning("[Application] Restart requested in %ld ms", this->_restartDelay);
     if (this->_restartDelay != 0)
       delay(this->_restartDelay);
