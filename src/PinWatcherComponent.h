@@ -1,7 +1,7 @@
-#ifndef __PINWATCHERCOMPONENT_H__
-#define __PINWATCHERCOMPONENT_H__
+#ifndef __PINWATCHER_COMPONENT_H__
+#define __PINWATCHER_COMPONENT_H__
 
-#include "components.h"
+#include "Components.h"
 
 class DigitalPinWatcherComponent: public Component {
   private:
