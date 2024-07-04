@@ -19,13 +19,17 @@ class Application {
     WifiComponent *_wifi;
     TimeComponent *_time;
     OtaComponent *_ota;
+    uint16_t _otaPortNumber;
     const char *_hostname;
     const String _macAddress;
     time_t _bootTimeUtc;
     unsigned long _restartDelay;
 
+  protected:
+    String makeHtml(const char *message);
+
   public:
-    Application(size_t maxConfigValues = 50);
+    Application(uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
     void addTask(String name, Milliseconds interval, void (*taskFunction)());
     void addComponent(Component *component);
     const char *config(const char *key, const char *defaultValue = NULL);
@@ -47,5 +51,8 @@ class Application {
     void mapPost(const char *path, void (*handler)());
 
     void requestReset(unsigned long delay) { _restartDelay = delay; }
+
+    void enableConfigEditor(const char *path = "/config");
 };
+
 #endif

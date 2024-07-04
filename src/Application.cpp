@@ -10,12 +10,13 @@ const char *Application::configFileName = "/config.sys";
  * Main Application class. Initializes LittleFS and reads configuration from /config.sys
  * if LittleFS available. When setup() is called, Wifi and Time services are enabled
  */
-Application::Application(size_t maxConfigValues) :
+Application::Application(uint16_t otaPortNumber, size_t maxConfigValues) :
   _configuration(NULL),
   _tasks(new Tasks()),
   _wifi(NULL),
   _time(NULL),
   _ota(NULL),
+  _otaPortNumber(otaPortNumber),
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
   _restartDelay((unsigned long)-1)
@@ -56,13 +57,13 @@ void Application::setup() {
 
   this->_bootTimeUtc = UTC.tzTime();
 
-  Components::add(this->_ota = new OtaComponent(80));
+  Components::add(this->_ota = new OtaComponent(this->_otaPortNumber));
 
   const char *otaUsername = this->config("ota-username", NULL);
   const char *otaPassword = this->config("ota-password", NULL);
   if (otaUsername != NULL && otaPassword != NULL)
     ElegantOTA.setAuth(otaUsername, otaPassword);
-    
+
   Log::logDebug("[Application] booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-M-d H:i:s").c_str());
 }
 
@@ -77,6 +78,7 @@ void Application::loop() {
     if (this->_restartDelay != 0)
       delay(this->_restartDelay);
     Log::logInformation("[Application] Restarting.");
+    this->webserver()->stop();
     ESP.restart();
   }
 }
@@ -101,4 +103,65 @@ void Application::mapGet(const char *path, void (*handler)()) {
 
 void Application::mapPost(const char *path, void (*handler)()) {
   this->_ota->webserver()->on(path, HTTP_POST, handler);
+}
+
+String Application::makeHtml(const char *message) {
+    auto f = LittleFS.open("/config.sys", "r");
+    auto s = f.readString();
+    f.close();
+    String html = R"###(
+<html>
+  <head>
+    <title>Change configuration</title>
+  </head>
+  <body>
+    <h1>#HOSTNAME# configuration</h1>
+    #MESSAGE#
+    <form method="POST">
+      <p>
+        <textarea name="text" style="width: 100%; height: 80vh; text-wrap: nowrap">#TEXT#</textarea>
+      </p>
+      <p>
+        <input type="submit" name="submit" value="Save" />
+      </p>
+    </form>
+    <form method="POST">
+      <p>
+        <input type="submit" name="submit" value="Reset" />
+      </p>
+    </form>
+  </body>
+</html>
+)###";
+    if (message == NULL)
+      html.replace("#MESSAGE#", "");
+    else
+      html.replace("#MESSAGE#", String("<h2>") + message + "</h2>");
+
+    html.replace("#HOSTNAME#", this->hostname());
+    html.replace("#TEXT#", s);
+
+    return html;
+}
+
+void Application::enableConfigEditor(const char *path) {
+  this->_ota->webserver()->on(path, HTTP_GET, [&]() { 
+    this->webserver()->sendContent(this->makeHtml(NULL));
+  });
+
+  this->_ota->webserver()->on(path, [&]() {
+    auto t = this->webserver()->arg("submit");
+    if (t == "Save") {
+      auto s = this->webserver()->arg("text");
+      auto f = LittleFS.open("/config.sys", "w");
+      f.print(s);
+      f.close();
+      this->webserver()->sendContent(this->makeHtml("Contents were changed."));
+    } else if (t == "Reset") {
+      this->webserver()->sendContent("Reset requested.");
+      this->requestReset(3000);
+    } else {
+      this->webserver()->sendContent("GOT:" + t);
+    }
+  });
 }
