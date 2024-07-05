@@ -65,6 +65,8 @@ void Application::setup() {
     ElegantOTA.setAuth(otaUsername, otaPassword);
 
   Log::logDebug("[Application] booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-M-d H:i:s").c_str());
+
+  this->webserver()->enableCORS(true);
 }
 
 /**
@@ -98,18 +100,45 @@ void Application::addTask(String name, Milliseconds interval, void (*taskFunctio
 }
 
 void Application::mapGet(const char *path, void (*handler)()) {
-  this->_ota->webserver()->on(path, HTTP_GET, handler);
+  this->webserver()->on(path, HTTP_GET, handler);
 }
 
 void Application::mapPost(const char *path, void (*handler)()) {
-  this->_ota->webserver()->on(path, HTTP_POST, handler);
+  this->webserver()->on(path, HTTP_POST, handler);
 }
 
-String Application::makeHtml(const char *message) {
-    auto f = LittleFS.open("/config.sys", "r");
-    auto s = f.readString();
-    f.close();
-    String html = R"###(
+String readFile(const char *path) {
+  auto f = LittleFS.open(path, "r");
+  if (!f)
+    return String(""); // TODO: this is not an empty file...
+    
+  auto s = f.readString();
+  f.close();
+  return s;
+}
+
+bool writeFile(const char *path, const char *s) {
+  auto f = LittleFS.open(path, "w");
+  if (!f)
+    return false;
+  f.print(s);
+  f.close();
+  return true;
+}
+
+String Application::HtmlEncode(const char *s) {
+  String html(s);
+  html.replace("<", "&lt;");
+  html.replace(">", "&gt;");
+  return html;
+}
+
+String Application::makeHtml(const char *file, const char *message) {
+    String s = readFile(file);
+
+    String html = LittleFS.exists("/wwwroot/edit-file.html")
+      ? readFile("/wwwroot/edit-file.html")
+      : R"###(
 <html>
   <head>
     <title>Change configuration</title>
@@ -136,32 +165,86 @@ String Application::makeHtml(const char *message) {
     if (message == NULL)
       html.replace("#MESSAGE#", "");
     else
-      html.replace("#MESSAGE#", String("<h2>") + message + "</h2>");
+      html.replace("#MESSAGE#", this->HtmlEncode(message).c_str());
 
-    html.replace("#HOSTNAME#", this->hostname());
-    html.replace("#TEXT#", s);
+    html.replace("#FILE#", this->HtmlEncode(file));
+    html.replace("#HOSTNAME#", this->HtmlEncode(this->hostname()));
+    html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
 
     return html;
 }
 
 void Application::enableConfigEditor(const char *path) {
-  this->_ota->webserver()->on(path, HTTP_GET, [&]() { 
-    this->webserver()->sendContent(this->makeHtml(NULL));
+  this->webserver()->on(path, HTTP_GET, [&]() {
+    auto server = this->webserver();
+    server->sendContent(this->makeHtml("/config.sys", NULL));
   });
 
-  this->_ota->webserver()->on(path, [&]() {
-    auto t = this->webserver()->arg("submit");
+  this->webserver()->on(path, HTTP_POST, [&]() {
+    auto server = this->webserver();
+    auto t = server->arg("submit");
     if (t == "Save") {
-      auto s = this->webserver()->arg("text");
-      auto f = LittleFS.open("/config.sys", "w");
-      f.print(s);
-      f.close();
-      this->webserver()->sendContent(this->makeHtml("Contents were changed."));
+      auto s = server->arg("text");
+      writeFile("/config.sys", s.c_str());
+      server->sendContent(this->makeHtml("/config.sys", "Contents were changed."));
     } else if (t == "Reset") {
-      this->webserver()->sendContent("Reset requested.");
+      server->sendContent("Reset requested.");
       this->requestReset(3000);
     } else {
-      this->webserver()->sendContent("GOT:" + t);
+      server->sendContent("GOT:" + t);
     }
   });
+}
+
+void Application::enableFileEditor(const char *readPath, const char *writePath, const char *editPath) {
+  if (readPath != NULL) {
+    auto server = this->webserver();
+    server->on(readPath, HTTP_GET, [&]() {
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else if (LittleFS.exists(path))
+        server->sendContent(readFile(path.c_str()));
+      else
+        server->send(404, "text/plain", "File not found: " + path);
+    });
+  }
+
+  if (writePath != NULL) {
+    this->webserver()->on(writePath, HTTP_POST, [&]() {
+      auto server = this->webserver();
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else {
+        auto s = server->arg("text");
+        writeFile(path.c_str(), s.c_str());
+        server->send(200);
+      }
+    });
+  }
+
+  if (editPath != NULL) {
+    this->webserver()->on(editPath, HTTP_GET, [&]() { 
+      auto server = this->webserver();
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else
+        server->sendContent(this->makeHtml(path.c_str(), NULL));
+    });
+
+    this->webserver()->on(editPath, HTTP_POST, [&]() {
+      auto server = this->webserver();
+      auto path = server->arg("f");
+      auto s = server->arg("text");
+      if (path.length() == 0)
+        server->send(400);
+      else {
+        auto s = server->arg("text");
+        writeFile(path.c_str(), s.c_str());
+        server->sendContent(this->makeHtml(path.c_str(), "Contents were changed."));
+      }
+    });
+  }
 }

@@ -26,7 +26,8 @@ class Application {
     unsigned long _restartDelay;
 
   protected:
-    String makeHtml(const char *message);
+    String makeHtml(const char *file, const char *message);
+    String HtmlEncode(const char *s);
 
   public:
     Application(uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
@@ -53,6 +54,7 @@ class Application {
     void requestReset(unsigned long delay) { _restartDelay = delay; }
 
     void enableConfigEditor(const char *path = "/config");
+    void enableFileEditor(const char *readPath, const char *writePath, const char *editPath);
 };
 
 #endif
