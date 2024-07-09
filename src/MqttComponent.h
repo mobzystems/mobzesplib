@@ -17,6 +17,10 @@ class MqttComponent: public Component {
     void (*_receive)(const char *topic, const byte *payload, unsigned int length);
     unsigned long _intervalMs;
     unsigned long _lastCheckTime;
+    String _willTopic;
+    String _willMessage;
+    bool _willRetain; 
+    uint8_t _willQos;
 
     void reconnect();
 
@@ -30,7 +34,11 @@ class MqttComponent: public Component {
       const char *clientId,
       void (*subscribe)(PubSubClient *) = NULL,
       void (*receive)(const char *topic, const byte *payload, unsigned int length) = NULL,
-      unsigned long intervalMs = 30000
+      unsigned long intervalMs = 30000,
+      const char *willTopic = NULL,
+      const char *willMessage = NULL,
+      bool willRetain = true, 
+      uint8_t willQos = MQTTQOS0
     );
     PubSubClient *mqttClient() { return &this->_mqttClient; }
 

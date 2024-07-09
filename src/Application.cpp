@@ -169,6 +169,7 @@ String Application::makeHtml(const char *file, const char *message) {
 
     html.replace("#FILE#", this->HtmlEncode(file));
     html.replace("#HOSTNAME#", this->HtmlEncode(this->hostname()));
+    html.replace("#MACADDRESS#", this->HtmlEncode(this->_macAddress.c_str()));
     html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
 
     return html;

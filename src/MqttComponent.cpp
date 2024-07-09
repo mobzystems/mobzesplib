@@ -13,7 +13,11 @@ MqttComponent::MqttComponent(
   const char *clientId,
   void (*subscribe)(PubSubClient *), 
   void (*receive)(const char *topic, const byte *payload, unsigned int length),
-  unsigned long intervalMs
+  unsigned long intervalMs,
+  const char *willTopic, 
+  const char *willMessage,
+  bool willRetain, 
+  uint8_t willQos
 ) :
   Component("Mqtt"),
   _username(username),
@@ -21,7 +25,11 @@ MqttComponent::MqttComponent(
   _clientId(clientId),
   _mqttClient(broker, portNumber, receive, *client),
   _subscribe(subscribe),
-  _intervalMs(intervalMs)
+  _intervalMs(intervalMs),
+  _willTopic(willTopic),
+  _willMessage(willMessage),
+  _willRetain(willRetain),
+  _willQos(willQos)
 {}
 
 /***
@@ -42,7 +50,11 @@ void MqttComponent::reconnect()
     Log::logDebug("[%s] Attempting MQTT connection with client ID '%s' (state is %d)...", this->name(), clientId.c_str(), this->mqttClient()->state());
     // Attempt to connect
     // Log::logTrace("MQTT %s/%s", mqttUsername.c_str(), mqttPassword.c_str());
-    if (this->_mqttClient.connect(clientId.c_str(), this->_username.c_str(), this->_password.c_str()))
+    if (this->_mqttClient.connect(
+      clientId.c_str(),
+      this->_username.c_str(), this->_password.c_str(),
+      this->_willTopic.c_str(), this->_willQos, this->_willRetain, this->_willMessage.c_str()
+    ))
     {
       Log::logInformation("[%s] MQTT connected with client ID '%s'.", this->name(), clientId.c_str());
       if (this->_subscribe != NULL) {
