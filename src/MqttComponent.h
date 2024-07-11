@@ -13,7 +13,7 @@ class MqttComponent: public Component {
     String _password;
     String _clientId;
     PubSubClient _mqttClient;
-    void (*_subscribe)(PubSubClient *);
+    void (*_onConnected)(PubSubClient *);
     void (*_receive)(const char *topic, const byte *payload, unsigned int length);
     unsigned long _intervalMs;
     unsigned long _lastCheckTime;

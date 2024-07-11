@@ -11,8 +11,8 @@ MqttComponent::MqttComponent(
   const char *username, 
   const char *password,
   const char *clientId,
-  void (*subscribe)(PubSubClient *), 
-  void (*receive)(const char *topic, const byte *payload, unsigned int length),
+  void (*onConnected)(PubSubClient *), 
+  void (*onReceived)(const char *topic, const byte *payload, unsigned int length),
   unsigned long intervalMs,
   const char *willTopic, 
   const char *willMessage,
@@ -23,8 +23,8 @@ MqttComponent::MqttComponent(
   _username(username),
   _password(password),
   _clientId(clientId),
-  _mqttClient(broker, portNumber, receive, *client),
-  _subscribe(subscribe),
+  _mqttClient(broker, portNumber, onReceived, *client),
+  _onConnected(onConnected),
   _intervalMs(intervalMs),
   _willTopic(willTopic),
   _willMessage(willMessage),
@@ -47,27 +47,23 @@ void MqttComponent::reconnect()
       clientId.replace("#", String(random(0x10000 - 0x1000) + 0x1000, HEX));
     }
 
-    Log::logDebug("[%s] Attempting MQTT connection with client ID '%s' (state is %d)...", this->name(), clientId.c_str(), this->mqttClient()->state());
     // Attempt to connect
-    // Log::logTrace("MQTT %s/%s", mqttUsername.c_str(), mqttPassword.c_str());
+    Log::logDebug("[%s] Attempting connection with client ID '%s' (state is %d)...", this->name(), clientId.c_str(), this->mqttClient()->state());
     if (this->_mqttClient.connect(
       clientId.c_str(),
       this->_username.c_str(), this->_password.c_str(),
       this->_willTopic.c_str(), this->_willQos, this->_willRetain, this->_willMessage.c_str()
     ))
     {
-      Log::logInformation("[%s] MQTT connected with client ID '%s'.", this->name(), clientId.c_str());
-      if (this->_subscribe != NULL) {
-        Log::logTrace("[%s] Subscribing...", name());
-        (*(this->_subscribe))(&this->_mqttClient);
+      Log::logInformation("[%s] Connected with client ID '%s'.", this->name(), clientId.c_str());
+      if (this->_onConnected != NULL) {
+        Log::logTrace("[%s] Calling onConnected...", name());
+        (*(this->_onConnected))(&this->_mqttClient);
       }
     }
     else
     {
-      Log::logError("[%s] MQTT connection failed, state = %d", this->name(), this->_mqttClient.state());
-      // Log::logTrace("[%s] Waiting 5 seconds", name());
-      // // Wait 5 seconds before retrying
-      // delay(5000); // TODO
+      Log::logError("[%s] Connection failed, state = %d", this->name(), this->_mqttClient.state());
     }
   }
 }
