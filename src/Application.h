@@ -14,6 +14,8 @@
 class Application {
   private:
   protected:
+    String _title;
+    String _version;
     Configuration *_configuration;
     Tasks *_tasks;
     WifiComponent *_wifi;
@@ -30,7 +32,7 @@ class Application {
     String HtmlEncode(const char *s);
 
   public:
-    Application(uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
+    Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
     void addTask(String name, Milliseconds interval, void (*taskFunction)());
     void addComponent(Component *component);
     const char *config(const char *key, const char *defaultValue = NULL);

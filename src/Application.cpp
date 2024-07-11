@@ -10,7 +10,9 @@ const char *Application::configFileName = "/config.sys";
  * Main Application class. Initializes LittleFS and reads configuration from /config.sys
  * if LittleFS available. When setup() is called, Wifi and Time services are enabled
  */
-Application::Application(uint16_t otaPortNumber, size_t maxConfigValues) :
+Application::Application(const char *title, const char *version, uint16_t otaPortNumber, size_t maxConfigValues) :
+  _title(title),
+  _version(version),
   _configuration(NULL),
   _tasks(new Tasks()),
   _wifi(NULL),
@@ -141,22 +143,33 @@ String Application::makeHtml(const char *file, const char *message) {
       : R"###(
 <html>
   <head>
-    <title>Change configuration</title>
+    <title>#FILE# - Edit</title>
+    <style>
+      body { font-family: helvetica, arial, sans-serif; display: grid; grid-template-rows: auto 1fr auto; }
+      p { margin: 0; }
+      textarea { width: 100%; height: 100%; text-wrap: nowrap; }
+      #topform { display: grid; grid-template-rows: 1fr auto; gap: 0.5rem; }
+      .message { color: red; }
+    </style>
   </head>
   <body>
-    <h1>#HOSTNAME# configuration</h1>
-    #MESSAGE#
-    <form method="POST">
+    <div>
+      <h1>File <em>#FILE#</em></h1>
+      <h2>on <em>#HOSTNAME# (#MACADDRESS#)</em></h2>
+    </div>
+    <form method="POST" id="topform">
       <p>
-        <textarea name="text" style="width: 100%; height: 80vh; text-wrap: nowrap">#TEXT#</textarea>
+        <textarea name="text">#TEXT#</textarea>
       </p>
       <p>
         <input type="submit" name="submit" value="Save" />
+        <span class="message">#MESSAGE#</span>
       </p>
     </form>
     <form method="POST">
       <p>
         <input type="submit" name="submit" value="Reset" />
+        #APPTITLE#
       </p>
     </form>
   </body>
@@ -171,6 +184,11 @@ String Application::makeHtml(const char *file, const char *message) {
     html.replace("#HOSTNAME#", this->HtmlEncode(this->hostname()));
     html.replace("#MACADDRESS#", this->HtmlEncode(this->_macAddress.c_str()));
     html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
+
+    String appTitle = this->_title;
+    if (this->_version.length() > 0)
+      appTitle += " v" + this->_version;
+    html.replace("#APPTITLE#", appTitle);
 
     return html;
 }
