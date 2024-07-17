@@ -22,7 +22,8 @@ WifiComponent::WifiComponent(
   _password(password),
   _intervalMs(checkInterval),
   _waitMs(waitTime),
-  _lastCheckTime(0)
+  _lastCheckTime(0),
+  _watchdogTimeoutSeconds(0)
 {
 }
 
@@ -38,9 +39,17 @@ void WifiComponent::setup()
 
   Log::logDebug("[%s] Connecting to WiFi network '%s'...", name(), this->_ssid.c_str());
   setStatus(1000, Log::LOGLEVEL::Information, "Connecting");
+  unsigned long ms = millis();
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(200);
+    if (this->_watchdogTimeoutSeconds != 0 && millis() > ms + this->_watchdogTimeoutSeconds * 1000) {
+      setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
+      Log::logCritical("[%s] No connection after %d seconds, restarting...", name(), this->_watchdogTimeoutSeconds);
+      delay(2000);
+      // Restart the server
+      ESP.restart();
+    }
     Log::logTrace("[%s] Still connecting...", name());
   }
 

@@ -21,12 +21,13 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _otaPortNumber(otaPortNumber),
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
-  _restartDelay((unsigned long)-1)
+  _restartDelay((unsigned long)-1),
+  _wifiWatchdogTimeout(0)
 {
   Log::logDebug("[Application] Starting...");
 
   if (!LittleFS.begin()) {
-    Log::logCritical("Cannot start file system, con configuration available");
+    Log::logCritical("Cannot start file system, no configuration available");
   } else {
     _configuration = new Configuration(&LittleFS, this->configFileName, maxConfigValues);
     _configuration->log(Log::LOGLEVEL::Trace);
@@ -55,6 +56,9 @@ const char *Application::config(const char *key, const char *defaultValue) {
 void Application::setup() {
   // Set up wifi and time components
   Components::add(this->_wifi = new WifiComponent(_hostname, this->config("wifi-ssid"), this->config("wifi-password")));
+  if (this->_wifiWatchdogTimeout > 0)
+    this->_wifi->setWatchdogTimeoutSeconds(_wifiWatchdogTimeout);
+
   Components::add(this->_time = new TimeComponent(this->config("timezone", "Europe/Amsterdam")));
 
   this->_bootTimeUtc = UTC.tzTime();
