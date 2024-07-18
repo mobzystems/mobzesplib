@@ -60,5 +60,8 @@ class Application {
     void enableFileEditor(const char *readPath, const char *writePath, const char *editPath);
 
     void setWifiWatchdogTimeoutSeconds(uint16_t seconds) { this->_wifiWatchdogTimeout = seconds; }
+
+    const String &title() { return this->_title; }
+    const String &version() { return this->_version; }
 };
 #endif
