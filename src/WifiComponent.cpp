@@ -81,7 +81,10 @@ void WifiComponent::loop()
       WiFi.disconnect();
       delay(this->_waitMs);
       WiFi.reconnect();
-      Log::logInformation("[%s] Reconnected.", name());
+      if (WiFi.status() == WL_CONNECTED)
+        Log::logInformation("[%s] Reconnected.", name());
+      else
+        Log::logInformation("[%s] *Not* reconnected!", name());
     }
     else
       Log::logDebug("[%s] Still connected.", name());
