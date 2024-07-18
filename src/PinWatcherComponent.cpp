@@ -79,9 +79,10 @@ void DigitalClickWatcherComponent::loop() {
   }
 }
 
-AnalogPinWatcherComponent::AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t, uint16_t)) :
+AnalogPinWatcherComponent::AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t, uint16_t), uint16_t delta) :
   Component("AnalogPin"),
   _pinNumber(pinNumber),
+  _delta(delta),
   _onValueChanged(onValueChanged)
 {}
 
@@ -92,7 +93,9 @@ void AnalogPinWatcherComponent::setup() {
 
 void AnalogPinWatcherComponent::loop() {
   uint16_t currentValue = analogRead(this->_pinNumber);
-  if (currentValue != this->_lastValue) {
+  // Makesure uint16_t does now wrap below 0
+  uint16_t minValue = this->_lastValue >= this->_delta ? this->_lastValue - this->_delta : 0;
+  if (currentValue < minValue || currentValue > this->_lastValue + this->_delta) {
     Log::logDebug("[%s] Pin %d is now %d", this->name(), this->_pinNumber, currentValue);
     this->_onValueChanged(this->_lastValue, currentValue);
     this->_lastValue = currentValue;

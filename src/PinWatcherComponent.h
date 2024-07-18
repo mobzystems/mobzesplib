@@ -42,12 +42,13 @@ class DigitalClickWatcherComponent: public Component {
 class AnalogPinWatcherComponent: public Component {
   private:
     uint8_t _pinNumber;
+    uint16_t _delta;
     void (*_onValueChanged)(uint16_t, uint16_t);
 
     uint16_t _lastValue;
 
   public:
-    AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t previous, uint16_t current));
+    AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t previous, uint16_t current), uint16_t delta = 0);
 
     void setup();
     void loop();
