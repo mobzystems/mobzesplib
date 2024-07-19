@@ -79,10 +79,13 @@ void DigitalClickWatcherComponent::loop() {
   }
 }
 
-AnalogPinWatcherComponent::AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t, uint16_t)) :
+AnalogPinWatcherComponent::AnalogPinWatcherComponent(uint8_t pinNumber, void (*onValueChanged)(uint16_t, uint16_t), uint16_t delta, unsigned long timeBetweenSamples) :
   Component("AnalogPin"),
   _pinNumber(pinNumber),
-  _onValueChanged(onValueChanged)
+  _delta(delta),
+  _timeBetweenSamples(timeBetweenSamples),
+  _onValueChanged(onValueChanged),
+  _lastReadTimestamp(millis())
 {}
 
 void AnalogPinWatcherComponent::setup() {
@@ -91,11 +94,18 @@ void AnalogPinWatcherComponent::setup() {
 }
 
 void AnalogPinWatcherComponent::loop() {
-  uint16_t currentValue = analogRead(this->_pinNumber);
-  if (currentValue != this->_lastValue) {
-    Log::logDebug("[%s] Pin %d is now %d", this->name(), this->_pinNumber, currentValue);
-    this->_onValueChanged(this->_lastValue, currentValue);
-    this->_lastValue = currentValue;
+  // Do not read analog ports too often. On d1 mini this can bring down the wifi!
+  auto ms = millis();
+  if (ms > this->_lastReadTimestamp + this->_timeBetweenSamples) {
+    this->_lastReadTimestamp = ms;
+    uint16_t currentValue = analogRead(this->_pinNumber);
+    // Makesure uint16_t does now wrap below 0
+    uint16_t minValue = this->_lastValue >= this->_delta ? this->_lastValue - this->_delta : 0;
+    if (currentValue < minValue || currentValue > this->_lastValue + this->_delta) {
+      Log::logDebug("[%s] Pin %d is now %d", this->name(), this->_pinNumber, currentValue);
+      this->_onValueChanged(this->_lastValue, currentValue);
+      this->_lastValue = currentValue;
+    }
   }
 }
 
