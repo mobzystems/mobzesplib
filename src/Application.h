@@ -63,5 +63,7 @@ class Application {
 
     const String &title() { return this->_title; }
     const String &version() { return this->_version; }
+
+    String chipModelName();
 };
 #endif

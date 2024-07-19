@@ -275,3 +275,13 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
     });
   }
 }
+
+String Application::chipModelName() {
+#if defined(ESP8266)
+  return "ESP8266";
+#elif defined(ESP32)
+  return ESP.getChipModel();
+#else
+  #error "Unknow compilation type"
+#endif
+}
