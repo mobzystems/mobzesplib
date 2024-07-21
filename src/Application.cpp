@@ -21,6 +21,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _otaPortNumber(otaPortNumber),
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
+  _bootTimeUtc(0),
   _restartDelay((unsigned long)-1),
   _wifiWatchdogTimeout(0)
 {
@@ -63,9 +64,8 @@ void Application::setup() {
   }
   Components::add(_wifi);
 
-  Components::add(this->_time = new TimeComponent(this->config("timezone", "Europe/Amsterdam")));
-
-  this->_bootTimeUtc = UTC.tzTime();
+  // Set up the time component with a default timeout
+  Components::add(this->_time = new TimeComponent(this->config("timezone", "Europe/Amsterdam"), atoi(this->config("time-timeout", "5"))));
 
   Components::add(this->_ota = new OtaComponent(this->_otaPortNumber));
 
@@ -74,7 +74,12 @@ void Application::setup() {
   if (otaUsername != NULL && otaPassword != NULL)
     ElegantOTA.setAuth(otaUsername, otaPassword);
 
-  Log::logDebug("[Application] booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-M-d H:i:s").c_str());
+  if (timeStatus() == timeSet) {
+    this->_bootTimeUtc = UTC.tzTime();
+    Log::logDebug("[Application] Booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
+  } else {
+    Log::logWarning("[Application] Cannot set boot time, time not set");
+  }
 
   this->webserver()->enableCORS(true);
 }
@@ -83,6 +88,12 @@ void Application::setup() {
  * Call this method from your loop() method
  */
 void Application::loop() {
+  // Get the first available boot time
+  if (this->_bootTimeUtc == 0 && timeStatus() == timeSet) {
+    this->_bootTimeUtc = UTC.tzTime();
+    Log::logDebug("[Application] Boot time set to %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
+  }
+
   Components::loop();
 
   if (this->_restartDelay != (unsigned long)-1) {

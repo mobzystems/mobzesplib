@@ -47,7 +47,9 @@ class Application {
 
     const char *hostname() { return this->_hostname; }
 
+    // The system boot time - can be 0 when time not (yet) available
     time_t bootTimeUtc() { return this->_bootTimeUtc; }
+    long upTimeSeconds()  { return UTC.now() - this->bootTimeUtc(); }
   
     static const char *configFileName;
 
