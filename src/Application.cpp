@@ -74,14 +74,18 @@ void Application::setup() {
   if (otaUsername != NULL && otaPassword != NULL)
     ElegantOTA.setAuth(otaUsername, otaPassword);
 
-  if (timeStatus() == timeSet) {
-    this->_bootTimeUtc = UTC.tzTime();
-    Log::logDebug("[Application] Booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
-  } else {
-    Log::logWarning("[Application] Cannot set boot time, time not set");
-  }
+  // if (timeStatus() == timeSet) {
+  //   this->setBootTime(UTC.tztime());
+  // } else {
+  //   Log::logWarning("[Application] Cannot set boot time, time not set");
+  // }
 
   this->webserver()->enableCORS(true);
+}
+
+void Application::setBootTimeUtc(time_t utc) {
+  this->_bootTimeUtc = UTC.tzTime();
+  Log::logDebug("[Application] Booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
 }
 
 /**
@@ -90,8 +94,7 @@ void Application::setup() {
 void Application::loop() {
   // Get the first available boot time
   if (this->_bootTimeUtc == 0 && timeStatus() == timeSet) {
-    this->_bootTimeUtc = UTC.tzTime();
-    Log::logDebug("[Application] Boot time set to %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
+    this->setBootTimeUtc(UTC.tzTime());
   }
 
   Components::loop();

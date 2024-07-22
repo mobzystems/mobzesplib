@@ -38,8 +38,9 @@ class Application {
     void addComponent(Component *component);
     const char *config(const char *key, const char *defaultValue = NULL);
 
-    void setup();
-    void loop();
+    virtual void setup();
+    virtual void loop();
+    virtual void setBootTimeUtc(time_t utc);
 
     TimeComponent *time() { return this->_time; }
     WifiComponent *wifi() { return this->_wifi; }
