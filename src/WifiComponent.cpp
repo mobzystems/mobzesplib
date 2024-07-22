@@ -43,7 +43,6 @@ void WifiComponent::setup()
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(500);
     if (this->_watchdogTimeoutSeconds != 0 && millis() > ms + this->_watchdogTimeoutSeconds * 1000) {
       setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
       Log::logCritical("[%s] No connection after %d seconds, restarting...", name(), this->_watchdogTimeoutSeconds);
@@ -52,7 +51,8 @@ void WifiComponent::setup()
       ESP.restart();
     }
     Log::logTrace("[%s] Still connecting...", name());
-    setStatus(1000, Log::LOGLEVEL::Trace, ("Connecting " + String((millis() - ms) / 1000) /* + "/" + String(this->_watchdogTimeoutSeconds) */).c_str());
+    setStatus(1000, Log::LOGLEVEL::Trace, ("Connecting " + String(1 + (millis() - ms) / 1000) /* + "/" + String(this->_watchdogTimeoutSeconds) */).c_str());
+    delay(500);
   }
 
   if (WiFi.status() == WL_CONNECTED) {

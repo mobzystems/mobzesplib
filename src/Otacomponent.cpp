@@ -6,7 +6,7 @@ OtaComponent::OtaComponent(uint16_t portNumber) :
 {}
 
 void OtaComponent::setup() {
-  Log::logInformation("Configure OTA");
+  Log::logInformation("[%s] Configuring OTA", this->name());
   this->_webServer->begin();
   ElegantOTA.begin(this->_webServer);
 }

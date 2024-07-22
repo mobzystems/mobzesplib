@@ -12,7 +12,7 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   _loopCount(0),
   _autoRestartTimeout(atoi(Application::config("auto-restart-timeout", "0")))
 {
-  Log::logDebug("[MqttApplication] Creating application with host name %s", this->hostname(), this->_onlinetopic.c_str());
+  Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
   // Configure the one and only app (also for lambdas)
   MqttApplication::_app = this,
   // Set the wifi watchdog timeout
@@ -165,6 +165,8 @@ void MqttApplication::loop() {
 }
 
 void MqttApplication::setBootTimeUtc(time_t utc) {
+  // Set the time in Application
+  Application::setBootTimeUtc(utc);
   // Done initializing: publish our boot time
   this->publishData("boot", NULL, (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString()).c_str(), true);
 }
@@ -173,11 +175,11 @@ void MqttApplication::publishData(const char *channel, const char *property, con
   if (this->_mqtt != NULL) {
     char topic[256];
     if (property == NULL)
-      snprintf(topic, sizeof(topic), "%s/%s/%s", this->_mqttPrefix.c_str(), this->hostname());
+      snprintf(topic, sizeof(topic), "%s/%s/%s", this->_mqttPrefix.c_str(), channel, this->hostname());
     else
       snprintf(topic, sizeof(topic), "%s/%s/%s/%s", this->_mqttPrefix.c_str(), channel, this->hostname(), property);
 
-    Log::logTrace("[MqttApplication] Publishing '%s' = '%s", topic, value);
+    Log::logTrace("[MqttApplication] Publishing '%s' = '%s'%s", topic, value, (retained ? " (retained)": ""));
     _mqtt->mqttClient()->publish(topic, value, retained);
   }
 }
@@ -186,6 +188,3 @@ void MqttApplication::publishProperty(const char *property, const char *value, b
 {
   this->publishData("status", property, value, retained);
 }
-
-
-

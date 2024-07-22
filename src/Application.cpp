@@ -290,12 +290,14 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
   }
 }
 
-String Application::chipModelName() {
+const String &Application::chipModelName() {
 #if defined(ESP8266)
-  return "ESP8266";
+  static const String _esp8266("ESP8266");
+  return _esp8266;
 #elif defined(ESP32)
-  return ESP.getChipModel();
+  static const String _esp32(ESP.getChipModel());
+  return _esp32;
 #else
-  #error "Unknow compilation type"
+  #error Unknown chip type
 #endif
 }
