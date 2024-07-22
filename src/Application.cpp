@@ -17,6 +17,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _tasks(new Tasks()),
   _wifi(NULL),
   _time(NULL),
+  _oled(NULL),
   _ota(NULL),
   _otaPortNumber(otaPortNumber),
   _hostname("default-hostname"),
@@ -300,4 +301,21 @@ const String &Application::chipModelName() {
 #else
   #error Unknown chip type
 #endif
+}
+
+void Application::addOledDisplay(int sda, int scl, uint8_t address) {
+  this->addComponent(this->_oled = new OledComponent(sda, scl, address));
+  auto display = _oled->getDisplay();
+  // _display->setRotation(2); // 180
+  display->setTextSize(1, 2);
+  display->println("Starting");
+  display->print(this->hostname());
+  display->display();
+}
+
+Adafruit_SSD1306 *Application::display() {
+  if (this->_oled == NULL) 
+    return NULL;
+  else
+    return this->_oled->getDisplay();
 }

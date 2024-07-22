@@ -9,6 +9,7 @@
 #include "WifiComponent.h"
 #include "TimeComponent.h"
 #include "TaskComponent.h"
+#include "OledComponent.h"
 #include "OtaComponent.h"
 
 class Application {
@@ -20,6 +21,7 @@ class Application {
     Tasks *_tasks;
     WifiComponent *_wifi;
     TimeComponent *_time;
+    OledComponent *_oled;
     OtaComponent *_ota;
     uint16_t _otaPortNumber;
     const char *_hostname;
@@ -68,5 +70,8 @@ class Application {
     const String &version() { return this->_version; }
 
     const String &chipModelName();
+
+    void addOledDisplay(int sda, int scl, uint8_t address);
+    Adafruit_SSD1306 *display();
 };
 #endif
