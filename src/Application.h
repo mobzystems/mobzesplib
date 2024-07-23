@@ -28,7 +28,6 @@ class Application {
     const String _macAddress;
     time_t _bootTimeUtc;
     unsigned long _restartDelay;
-    uint16_t _wifiWatchdogTimeout;
 
   protected:
     String makeHtml(const char *file, const char *message);
@@ -63,8 +62,6 @@ class Application {
 
     void enableConfigEditor(const char *path = "/config");
     void enableFileEditor(const char *readPath, const char *writePath, const char *editPath);
-
-    void setWifiWatchdogTimeoutSeconds(uint16_t seconds) { this->_wifiWatchdogTimeout = seconds; }
 
     const String &title() { return this->_title; }
     const String &version() { return this->_version; }

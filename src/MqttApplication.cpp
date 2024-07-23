@@ -4,7 +4,7 @@
 
 MqttApplication *MqttApplication::_app = NULL;
 
-MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, int wifiWatchdogTimout, uint16_t otaPortNumber, size_t maxConfigValues) :
+MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber, size_t maxConfigValues) :
   Application(title, version, otaPortNumber, maxConfigValues),
   _mqtt(NULL),
   _mqttPrefix(mqttPrefix),
@@ -15,8 +15,6 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
   // Configure the one and only app (also for lambdas)
   MqttApplication::_app = this,
-  // Set the wifi watchdog timeout
-  Application::setWifiWatchdogTimeoutSeconds(wifiWatchdogTimout);
 
   // Add the free memory/loop count task
   this->addTask("Show memory/loop status", atoi(this->config("memory-interval", "60")) * 1000, []()

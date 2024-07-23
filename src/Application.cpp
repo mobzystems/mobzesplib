@@ -23,8 +23,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
   _bootTimeUtc(0),
-  _restartDelay((unsigned long)-1),
-  _wifiWatchdogTimeout(0)
+  _restartDelay((unsigned long)-1)
 {
   Log::logDebug("[Application] Starting...");
 
@@ -57,17 +56,19 @@ const char *Application::config(const char *key, const char *defaultValue) {
  */
 void Application::setup() {
   // Set up wifi and time components
-  this->_wifi = new WifiComponent(_hostname, this->config("wifi-ssid"), this->config("wifi-password"));
-  if (this->_wifiWatchdogTimeout > 0)
-  {
-    Log::logTrace("[Application] Setting WiFi watchdog timeout to %d", _wifiWatchdogTimeout);
-    this->_wifi->setWatchdogTimeoutSeconds(_wifiWatchdogTimeout);
-  }
-  Components::add(_wifi);
+  Components::add(this->_wifi = new WifiComponent(
+    _hostname, 
+    this->config("wifi-ssid"), this->config("wifi-password"), 
+    atoi(this->config("wifi-watchdog-timeout", "30"))
+  ));
 
   // Set up the time component with a default timeout
-  Components::add(this->_time = new TimeComponent(this->config("timezone", "Europe/Amsterdam"), atoi(this->config("time-timeout", "5"))));
+  Components::add(this->_time = new TimeComponent(
+    this->config("timezone", "Europe/Amsterdam"),
+    atoi(this->config("time-timeout", "5"))
+  ));
 
+  // OTA:
   Components::add(this->_ota = new OtaComponent(this->_otaPortNumber));
 
   const char *otaUsername = this->config("ota-username", NULL);

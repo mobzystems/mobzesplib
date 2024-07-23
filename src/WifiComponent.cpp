@@ -11,6 +11,7 @@ WifiComponent::WifiComponent(
   const char *ssid, 
   // WiFi password
   const char *password,
+  int watchdogTimeoutSeconds,
   // The interval in ms to check the connection
   unsigned long checkInterval,
   // The wait time during a reconnect
@@ -23,7 +24,7 @@ WifiComponent::WifiComponent(
   _intervalMs(checkInterval),
   _waitMs(waitTime),
   _lastCheckTime(0),
-  _watchdogTimeoutSeconds(0)
+  _watchdogTimeoutSeconds(watchdogTimeoutSeconds)
 {
 }
 
@@ -32,7 +33,10 @@ void WifiComponent::setup()
 {
   // --- Configure WIFI ---
   WiFi.persistent(false);
+#if defined(ESP32)
+  // This causes "IP unset" on ESP8266!
   WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+#endif
   // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
   WiFi.setHostname(this->_hostname.c_str());
   WiFi.mode(WIFI_STA);

@@ -22,10 +22,9 @@ class WifiComponent: public Component {
     uint16_t _watchdogTimeoutSeconds;
 
   public:
-    WifiComponent(const char *hostname, const char *ssid, const char *password, unsigned long checkInterval = 30000, uint32_t waitTime = 2000);
+    WifiComponent(const char *hostname, const char *ssid, const char *password, int watchdogTimeoutSeconds, unsigned long checkInterval = 30000, uint32_t waitTime = 2000);
 
     WiFiClient *wifiClient() { return &this->_wifiClient; }
-    void setWatchdogTimeoutSeconds(uint16_t seconds) { this->_watchdogTimeoutSeconds = seconds; };
 
     // Required by Component
     void setup();

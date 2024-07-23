@@ -15,7 +15,7 @@ private:
   long _autoRestartTimeout;
 
 public:
-  MqttApplication(const char *title, const char *version, const char *mqttPrefix, int wifiWatchdogTimout, uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
+  MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
 
   MqttComponent *mqtt() { return this->_mqtt; }
 
