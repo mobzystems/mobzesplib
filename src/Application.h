@@ -53,6 +53,9 @@ class Application {
     time_t bootTimeUtc() { return this->_bootTimeUtc; }
     long upTimeSeconds()  { return UTC.now() - this->bootTimeUtc(); }
   
+    String bootTimeLocalString() { return this->bootTimeUtc() == 0 ? "" : this->time()->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
+    String bootTimeUtcString() { return this->bootTimeUtc() == 0 ? "" : UTC.dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
+
     static const char *configFileName;
 
     void mapGet(const char *path, void (*handler)());
@@ -68,6 +71,8 @@ class Application {
 
     const String &chipModelName();
 
+    void enableInfoPage(const char *path);
+  
     void addOledDisplay(int sda, int scl, uint8_t address);
     Adafruit_SSD1306 *display();
 };

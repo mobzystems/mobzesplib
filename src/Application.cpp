@@ -304,6 +304,28 @@ const String &Application::chipModelName() {
 #endif
 }
 
+void Application::enableInfoPage(const char *path) {
+  static Application *app = this;
+
+  this->mapGet("/info", []() {
+    // if(!_webServer->authenticate("123", "456"))
+    //   _webServer->requestAuthentication();
+    // else
+
+    // _webServer->enableCORS(true); // Already enabled thruogh application
+    app->webserver()->send(200, "text/plain",
+      String("Hostname: ") + String(app->hostname()) + 
+      "\r\nApplication: " + app->title() + 
+      "\r\nVersion: " + app->version() + 
+      "\r\nIP: " + app->wifi()->wifiClient()->localIP().toString() + 
+      "\r\nMAC: " + WiFi.macAddress() +
+      "\r\nCPU: " + app->chipModelName() +
+      "\r\nBootUTC: " + app->bootTimeLocalString() +
+      "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s")
+    );
+  });  
+}
+
 void Application::addOledDisplay(int sda, int scl, uint8_t address) {
   this->addComponent(this->_oled = new OledComponent(sda, scl, address));
   auto display = _oled->getDisplay();

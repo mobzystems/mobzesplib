@@ -39,25 +39,6 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   });
 }
 
-void MqttApplication::enableInfoPage(const char *path) {
-  this->mapGet("/info", []() {
-    // if(!_webServer->authenticate("123", "456"))
-    //   _webServer->requestAuthentication();
-    // else
-
-    // _webServer->enableCORS(true); // Already enabled thruogh application
-    _app->webserver()->send(200, "text/plain",
-      String("Hostname: ") + String(_app->hostname()) + 
-      "\r\nApplication: " + _app->title() + 
-      "\r\nVersion: " + _app->version() + 
-      "\r\nIP: " + _app->wifi()->wifiClient()->localIP().toString() + 
-      "\r\nMAC: " + WiFi.macAddress() +
-      "\r\nCPU: " + _app->chipModelName() +
-      "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s")
-    );
-  });  
-}
-
 void MqttApplication::setup() {
   Application::setup();
 

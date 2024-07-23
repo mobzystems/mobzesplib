@@ -19,11 +19,6 @@ public:
 
   MqttComponent *mqtt() { return this->_mqtt; }
 
-  String bootTimeLocalString() { return this->bootTimeUtc() == 0 ? "" : this->time()->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
-  String bootTimeUtcString() { return this->bootTimeUtc() == 0 ? "" : UTC.dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
-
-  void enableInfoPage(const char *path);
-  
   void setup();
   void loop();
 
