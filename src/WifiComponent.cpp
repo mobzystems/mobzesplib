@@ -32,8 +32,9 @@ void WifiComponent::setup()
 {
   // --- Configure WIFI ---
   WiFi.persistent(false);
-  WiFi.mode(WIFI_STA);
+  // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
   WiFi.setHostname(this->_hostname.c_str());
+  WiFi.mode(WIFI_STA);
 
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
 
