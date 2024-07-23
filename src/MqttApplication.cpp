@@ -4,13 +4,15 @@
 
 MqttApplication *MqttApplication::_app = NULL;
 
-MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber, size_t maxConfigValues) :
+MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, void (*onConnected)(), void (*onReceived)(const char *topic, const byte *payload, unsigned int length), uint16_t otaPortNumber, size_t maxConfigValues) :
   Application(title, version, otaPortNumber, maxConfigValues),
   _mqtt(NULL),
   _mqttPrefix(mqttPrefix),
   _onlinetopic(String(mqttPrefix) + "/status/" + this->hostname() + "/online"),
   _loopCount(0),
-  _autoRestartTimeout(atoi(Application::config("auto-restart-timeout", "0")))
+  _autoRestartTimeout(atoi(Application::config("auto-restart-timeout", "0"))),
+  _onMqttConnected(onConnected),
+  _onMqttReceived(onReceived)
 {
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
   // Configure the one and only app (also for lambdas)
@@ -39,6 +41,11 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   });
 }
 
+MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber, size_t maxConfigValues) :
+  MqttApplication(title, version, mqttPrefix, NULL, NULL, otaPortNumber, maxConfigValues)
+{
+}
+
 void MqttApplication::setup() {
   Application::setup();
 
@@ -49,6 +56,7 @@ void MqttApplication::setup() {
     _app->config("mqtt-username"), _app->config("mqtt-password"),
     _app->hostname(),
     [](PubSubClient *client) -> void {
+      Log::logDebug("[MqttApplication] Connected to MQTT");
       // We have just connected to the broker. Subscribe to topics here if necessary
       // We subscribe to .../online to detect when someone else marks us as offline ("false")
       // This can happen when we reboot. Our last will is published after the existing session
@@ -58,19 +66,31 @@ void MqttApplication::setup() {
 
       // Make sure we mark ourselves as online when we reconnect
       _app->publishProperty("online", "true", true);
+
+      if (_app->_onMqttConnected != NULL) {
+        Log::logTrace("[MqttApplication] Calling onMqttConnected");
+        _app->_onMqttConnected();
+      }
     },
     [](const char *topic, const byte *payload, unsigned int length) -> void {
       // Unpack the message to a buffer
       char buffer[256];
       strncpy(buffer, (const char *)payload, length);
       buffer[length] = '\0';
-      
+
+      Log::logDebug("[MqttApplication] Received '%s': '%s'", topic, buffer);
+
       // If it is the online topic...
       if (strcmp(topic, _app->_onlinetopic.c_str()) == 0) {
         // See if we got "false"
         if (strcmp(buffer, "false") == 0)
           // If so, send "true"
           _app->publishProperty("online", "true", true);
+      } else {
+        if (_app->_onMqttReceived != NULL) {
+          Log::logTrace("[MqttApplication] Calling onMqttReceived");
+          _app->_onMqttReceived(topic, payload, length);
+        }
       }
     }, 
     atoi(this->config("mqtt-interval", "300")) * 1000, // Check for lost connection every 5 minutes (default)
