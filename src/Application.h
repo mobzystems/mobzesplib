@@ -60,8 +60,8 @@ class Application {
 
     static const char *configFileName;
 
-    void mapGet(const char *path, std::function<void(WebServer *)> const handler);
-    void mapPost(const char *path, std::function<void(WebServer *)> const handler);
+    void mapGet(const char *path, std::function<void(WEBSERVER *)> const handler);
+    void mapPost(const char *path, std::function<void(WEBSERVER *)> const handler);
 
     void requestReset(unsigned long delay) { _restartDelay = delay; }
 

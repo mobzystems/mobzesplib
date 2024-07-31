@@ -125,11 +125,11 @@ void Application::addTask(String name, Milliseconds interval, std::function<void
   this->_tasks->add(name, interval, taskFunction);
 }
 
-void Application::mapGet(const char *path, std::function<void(WebServer *)> const handler) {
+void Application::mapGet(const char *path, std::function<void(WEBSERVER *)> const handler) {
   this->webserver()->on(path, HTTP_GET, [this, handler]() { handler(this->webserver()); });
 }
 
-void Application::mapPost(const char *path, std::function<void(WebServer *)> const handler) {
+void Application::mapPost(const char *path, std::function<void(WEBSERVER *)> const handler) {
   this->webserver()->on(path, HTTP_POST, [this, handler]() { handler(this->webserver()); });
 }
 
@@ -218,11 +218,11 @@ String Application::makeHtml(const char *file, const char *message) {
 }
 
 void Application::enableConfigEditor(const char *path) {
-  this->mapGet(path, [this](WebServer *server) {
+  this->mapGet(path, [this](WEBSERVER *server) {
     server->sendContent(this->makeHtml("/config.sys", NULL));
   });
 
-  this->mapPost(path, [this](WebServer *server) {
+  this->mapPost(path, [this](WEBSERVER *server) {
     auto t = server->arg("submit");
     if (t == "Save") {
       auto s = server->arg("text");
@@ -239,7 +239,7 @@ void Application::enableConfigEditor(const char *path) {
 
 void Application::enableFileEditor(const char *readPath, const char *writePath, const char *editPath) {
   if (readPath != NULL) {
-    this->mapGet(readPath, [this](WebServer *server) {
+    this->mapGet(readPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -251,7 +251,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
   }
 
   if (writePath != NULL) {
-    this->mapPost(writePath, [this](WebServer *server) {
+    this->mapPost(writePath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -264,7 +264,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
   }
 
   if (editPath != NULL) {
-    this->mapGet(editPath, [this](WebServer *server) { 
+    this->mapGet(editPath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -272,7 +272,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
         server->sendContent(this->makeHtml(path.c_str(), NULL));
     });
 
-    this->mapPost(editPath, [this](WebServer *server) {
+    this->mapPost(editPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
       auto s = server->arg("text");
       if (path.length() == 0)
@@ -299,7 +299,7 @@ const String &Application::chipModelName() {
 }
 
 void Application::enableInfoPage(const char *path) {
-  this->mapGet("/info", [this](WebServer *server) {
+  this->mapGet("/info", [this](WEBSERVER *server) {
     // if(!_webServer->authenticate("123", "456"))
     //   _webServer->requestAuthentication();
     // else
