@@ -14,12 +14,12 @@ private:
   long _loopCount;
   long _autoRestartTimeout;
 
-  void (*_onMqttConnected)();
-  void (*_onMqttReceived)(const char *topic, const byte *payload, unsigned int length);
+  std::function<void()> const _onMqttConnected;
+  std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
 
 public:
   MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
-  MqttApplication(const char *title, const char *version, const char *mqttPrefix, void (*onConnected)(), void (*onReceived)(const char *topic, const byte *payload, unsigned int length), uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
+  MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void()> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
 
   MqttComponent *mqtt() { return this->_mqtt; }
 

@@ -4,7 +4,7 @@
 
 MqttApplication *MqttApplication::_app = NULL;
 
-MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, void (*onConnected)(), void (*onReceived)(const char *topic, const byte *payload, unsigned int length), uint16_t otaPortNumber, size_t maxConfigValues) :
+MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void()> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber, size_t maxConfigValues) :
   Application(title, version, otaPortNumber, maxConfigValues),
   _mqtt(NULL),
   _mqttPrefix(mqttPrefix),
@@ -51,10 +51,10 @@ void MqttApplication::setup() {
 
   // MQTT
   this->addComponent(_mqtt = new MqttComponent(
-    _app->wifi()->wifiClient(),
-    _app->config("mqtt-server"), atoi(_app->config("mqtt-port")),
-    _app->config("mqtt-username"), _app->config("mqtt-password"),
-    _app->hostname(),
+    this->wifi()->wifiClient(),
+    this->config("mqtt-server"), atoi(_app->config("mqtt-port")),
+    this->config("mqtt-username"), _app->config("mqtt-password"),
+    this->hostname(),
     [](PubSubClient *client) -> void {
       Log::logDebug("[MqttApplication] Connected to MQTT");
       // We have just connected to the broker. Subscribe to topics here if necessary
@@ -101,7 +101,7 @@ void MqttApplication::setup() {
   // Auto-restart task
   if (this->_autoRestartTimeout > 0) {
     // Check every 15 minutes for an auto-restart
-    _app->addTask("Check auto-restart", atoi(this->config("auto-restart-interval", "900")) * 1000, []()
+    this->addTask("Check auto-restart", atoi(this->config("auto-restart-interval", "900")) * 1000, []()
     {
       if (_app->bootTimeUtc() == 0) {
         Log::logInformation("Uptime: time not available yet");
