@@ -125,12 +125,12 @@ void Application::addTask(String name, Milliseconds interval, std::function<void
   this->_tasks->add(name, interval, taskFunction);
 }
 
-void Application::mapGet(const char *path, void (*handler)()) {
-  this->webserver()->on(path, HTTP_GET, handler);
+void Application::mapGet(const char *path, std::function<void(WebServer *)> const handler) {
+  this->webserver()->on(path, HTTP_GET, [this, handler]() { handler(this->webserver()); });
 }
 
-void Application::mapPost(const char *path, void (*handler)()) {
-  this->webserver()->on(path, HTTP_POST, handler);
+void Application::mapPost(const char *path, std::function<void(WebServer *)> const handler) {
+  this->webserver()->on(path, HTTP_POST, [this, handler]() { handler(this->webserver()); });
 }
 
 String readFile(const char *path) {
@@ -218,13 +218,11 @@ String Application::makeHtml(const char *file, const char *message) {
 }
 
 void Application::enableConfigEditor(const char *path) {
-  this->webserver()->on(path, HTTP_GET, [&]() {
-    auto server = this->webserver();
+  this->mapGet(path, [this](WebServer *server) {
     server->sendContent(this->makeHtml("/config.sys", NULL));
   });
 
-  this->webserver()->on(path, HTTP_POST, [&]() {
-    auto server = this->webserver();
+  this->mapPost(path, [this](WebServer *server) {
     auto t = server->arg("submit");
     if (t == "Save") {
       auto s = server->arg("text");
@@ -241,8 +239,7 @@ void Application::enableConfigEditor(const char *path) {
 
 void Application::enableFileEditor(const char *readPath, const char *writePath, const char *editPath) {
   if (readPath != NULL) {
-    auto server = this->webserver();
-    server->on(readPath, HTTP_GET, [&]() {
+    this->mapGet(readPath, [this](WebServer *server) {
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -254,8 +251,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
   }
 
   if (writePath != NULL) {
-    this->webserver()->on(writePath, HTTP_POST, [&]() {
-      auto server = this->webserver();
+    this->mapPost(writePath, [this](WebServer *server) {
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -268,8 +264,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
   }
 
   if (editPath != NULL) {
-    this->webserver()->on(editPath, HTTP_GET, [&]() { 
-      auto server = this->webserver();
+    this->mapGet(editPath, [this](WebServer *server) { 
       auto path = server->arg("f");
       if (path.length() == 0)
         server->send(400);
@@ -277,8 +272,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
         server->sendContent(this->makeHtml(path.c_str(), NULL));
     });
 
-    this->webserver()->on(editPath, HTTP_POST, [&]() {
-      auto server = this->webserver();
+    this->mapPost(editPath, [this](WebServer *server) {
       auto path = server->arg("f");
       auto s = server->arg("text");
       if (path.length() == 0)
@@ -305,22 +299,20 @@ const String &Application::chipModelName() {
 }
 
 void Application::enableInfoPage(const char *path) {
-  static Application *app = this;
-
-  this->mapGet("/info", []() {
+  this->mapGet("/info", [this](WebServer *server) {
     // if(!_webServer->authenticate("123", "456"))
     //   _webServer->requestAuthentication();
     // else
 
     // _webServer->enableCORS(true); // Already enabled thruogh application
-    app->webserver()->send(200, "text/plain",
-      String("Hostname: ") + String(app->hostname()) + 
-      "\r\nApplication: " + app->title() + 
-      "\r\nVersion: " + app->version() + 
-      "\r\nIP: " + app->wifi()->wifiClient()->localIP().toString() + 
+    server->send(200, "text/plain",
+      String("Hostname: ") + String(this->hostname()) + 
+      "\r\nApplication: " + this->title() + 
+      "\r\nVersion: " + this->version() + 
+      "\r\nIP: " + this->wifi()->wifiClient()->localIP().toString() + 
       "\r\nMAC: " + WiFi.macAddress() +
-      "\r\nCPU: " + app->chipModelName() +
-      "\r\nBootUTC: " + app->bootTimeLocalString() +
+      "\r\nCPU: " + this->chipModelName() +
+      "\r\nBootUTC: " + this->bootTimeLocalString() +
       "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s")
     );
   });  
