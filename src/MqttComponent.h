@@ -13,8 +13,7 @@ class MqttComponent: public Component {
     String _password;
     String _clientId;
     PubSubClient _mqttClient;
-    void (*_onConnected)(PubSubClient *);
-    void (*_receive)(const char *topic, const byte *payload, unsigned int length);
+    std::function<void(PubSubClient *)> const _onConnected;
     unsigned long _intervalMs;
     unsigned long _lastCheckTime;
     String _willTopic;
@@ -32,8 +31,8 @@ class MqttComponent: public Component {
       const char *username,
       const char *password,
       const char *clientId,
-      void (*subscribe)(PubSubClient *) = NULL,
-      void (*receive)(const char *topic, const byte *payload, unsigned int length) = NULL,
+      std::function<void(PubSubClient *)> const onConnected = NULL,
+      std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived = NULL,
       unsigned long intervalMs = 30000,
       const char *willTopic = NULL,
       const char *willMessage = NULL,

@@ -11,8 +11,8 @@ MqttComponent::MqttComponent(
   const char *username, 
   const char *password,
   const char *clientId,
-  void (*onConnected)(PubSubClient *), 
-  void (*onReceived)(const char *topic, const byte *payload, unsigned int length),
+  std::function<void(PubSubClient *)> const onConnected, 
+  std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived,
   unsigned long intervalMs,
   const char *willTopic, 
   const char *willMessage,
@@ -58,7 +58,7 @@ void MqttComponent::reconnect()
       Log::logInformation("[%s] Connected with client ID '%s'.", this->name(), clientId.c_str());
       if (this->_onConnected != NULL) {
         Log::logTrace("[%s] Calling onConnected...", name());
-        (*(this->_onConnected))(&this->_mqttClient);
+        this->_onConnected(&this->_mqttClient);
       }
     }
     else

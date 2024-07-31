@@ -2,8 +2,6 @@
 
 #include "Logging.h"
 
-MqttApplication *MqttApplication::_app = NULL;
-
 MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void()> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber, size_t maxConfigValues) :
   Application(title, version, otaPortNumber, maxConfigValues),
   _mqtt(NULL),
@@ -15,11 +13,9 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   _onMqttReceived(onReceived)
 {
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
-  // Configure the one and only app (also for lambdas)
-  MqttApplication::_app = this,
 
   // Add the free memory/loop count task
-  this->addTask("Show memory/loop status", atoi(this->config("memory-interval", "60")) * 1000, []()
+  this->addTask("Show memory/loop status", atoi(this->config("memory-interval", "60")) * 1000, [this]()
   {
     static unsigned long lastMs = 0;
 
@@ -27,17 +23,17 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
     int loopSpeed = 0;
     if (lastMs != 0) {
       float seconds = (ms - lastMs) / 1000.0;
-      loopSpeed = (int)(_app->_loopCount / seconds);
+      loopSpeed = (int)(this->_loopCount / seconds);
     }
     lastMs = ms;
 
     uint32_t freeSize = ESP.getFreeHeap();
 
-    Log::logInformation("Free: %ld - Loop count: %d (%d/s)", freeSize, _app->_loopCount, loopSpeed);
-    _app->publishProperty("free", String(freeSize).c_str());
-    if (_app->_loopCount > 1)
-      _app->publishProperty("loops", String(loopSpeed).c_str());
-    _app->_loopCount = 0;
+    Log::logInformation("Free: %ld - Loop count: %d (%d/s)", freeSize, this->_loopCount, loopSpeed);
+    this->publishProperty("free", String(freeSize).c_str());
+    if (this->_loopCount > 1)
+      this->publishProperty("loops", String(loopSpeed).c_str());
+    this->_loopCount = 0;
   });
 }
 
@@ -52,27 +48,27 @@ void MqttApplication::setup() {
   // MQTT
   this->addComponent(_mqtt = new MqttComponent(
     this->wifi()->wifiClient(),
-    this->config("mqtt-server"), atoi(_app->config("mqtt-port")),
-    this->config("mqtt-username"), _app->config("mqtt-password"),
+    this->config("mqtt-server"), atoi(this->config("mqtt-port")),
+    this->config("mqtt-username"), this->config("mqtt-password"),
     this->hostname(),
-    [](PubSubClient *client) -> void {
+    [this](PubSubClient *client) -> void {
       Log::logDebug("[MqttApplication] Connected to MQTT");
       // We have just connected to the broker. Subscribe to topics here if necessary
       // We subscribe to .../online to detect when someone else marks us as offline ("false")
       // This can happen when we reboot. Our last will is published after the existing session
       // disconnects but we have already marked ourselves as online by then so the will
       // message replaces ours. We will override the will message when we see it
-      client->subscribe(_app->_onlinetopic.c_str());
+      client->subscribe(this->_onlinetopic.c_str());
 
       // Make sure we mark ourselves as online when we reconnect
-      _app->publishProperty("online", "true", true);
+      this->publishProperty("online", "true", true);
 
-      if (_app->_onMqttConnected != NULL) {
+      if (this->_onMqttConnected != NULL) {
         Log::logTrace("[MqttApplication] Calling onMqttConnected");
-        _app->_onMqttConnected();
+        this->_onMqttConnected();
       }
     },
-    [](const char *topic, const byte *payload, unsigned int length) -> void {
+    [this](const char *topic, const byte *payload, unsigned int length) -> void {
       // Unpack the message to a buffer
       char buffer[256];
       strncpy(buffer, (const char *)payload, length);
@@ -81,15 +77,15 @@ void MqttApplication::setup() {
       Log::logDebug("[MqttApplication] Received '%s': '%s'", topic, buffer);
 
       // If it is the online topic...
-      if (strcmp(topic, _app->_onlinetopic.c_str()) == 0) {
+      if (strcmp(topic, this->_onlinetopic.c_str()) == 0) {
         // See if we got "false"
         if (strcmp(buffer, "false") == 0)
           // If so, send "true"
-          _app->publishProperty("online", "true", true);
+          this->publishProperty("online", "true", true);
       } else {
-        if (_app->_onMqttReceived != NULL) {
+        if (this->_onMqttReceived != NULL) {
           Log::logTrace("[MqttApplication] Calling onMqttReceived");
-          _app->_onMqttReceived(topic, payload, length);
+          this->_onMqttReceived(topic, payload, length);
         }
       }
     }, 
@@ -101,25 +97,25 @@ void MqttApplication::setup() {
   // Auto-restart task
   if (this->_autoRestartTimeout > 0) {
     // Check every 15 minutes for an auto-restart
-    this->addTask("Check auto-restart", atoi(this->config("auto-restart-interval", "900")) * 1000, []()
+    this->addTask("Check auto-restart", atoi(this->config("auto-restart-interval", "900")) * 1000, [this]()
     {
-      if (_app->bootTimeUtc() == 0) {
+      if (this->bootTimeUtc() == 0) {
         Log::logInformation("Uptime: time not available yet");
       } else {
-        long uptime = _app->upTimeSeconds();
-        long maxUptime = _app->_autoRestartTimeout * 60L;
+        long uptime = this->upTimeSeconds();
+        long maxUptime = this->_autoRestartTimeout * 60L;
         Log::logDebug("System uptime is %ld seconds (max. %ld)", uptime, maxUptime);
         // Have we reached out maximum up time?
         if (uptime >= maxUptime) {
-          int autoRestartHour = atoi(_app->config("auto-restart-hour", "0"));
-          if (_app->time()->TZ()->hour() >= autoRestartHour) {
-            Log::logInformation("Uptime > %d minutes, restarting...", _app->_autoRestartTimeout);
-            _app->publishProperty("autorestart", UTC.dateTime("Y-m-d H:i:s").c_str(), true);
-            _app->mqtt()->mqttClient()->disconnect();
+          int autoRestartHour = atoi(this->config("auto-restart-hour", "0"));
+          if (this->time()->TZ()->hour() >= autoRestartHour) {
+            Log::logInformation("Uptime > %d minutes, restarting...", this->_autoRestartTimeout);
+            this->publishProperty("autorestart", UTC.dateTime("Y-m-d H:i:s").c_str(), true);
+            this->mqtt()->mqttClient()->disconnect();
             delay(5000);
             ESP.restart();
           } else {
-            Log::logInformation("Uptime > %ld minutes, but hour (%d) is not yet %d.", uptime / 60, _app->time()->TZ()->hour(), autoRestartHour);
+            Log::logInformation("Uptime > %ld minutes, but hour (%d) is not yet %d.", uptime / 60, this->time()->TZ()->hour(), autoRestartHour);
           }
         }
       }
@@ -129,23 +125,23 @@ void MqttApplication::setup() {
   // IP task: 10 minutes (600s)
   int ipInterval = atoi(this->config("ip-interval", "600"));
   if (ipInterval != 0) {
-    this->addTask("Publish IP", ipInterval * 1000, []() {
+    this->addTask("Publish IP", ipInterval * 1000, [this]() {
       auto wifiAddress = WiFi.localIP().toString();
       Log::logInformation("IP-address is now %s", wifiAddress.c_str());
-      _app->publishProperty("IP", wifiAddress.c_str());
+      this->publishProperty("IP", wifiAddress.c_str());
     });
   }
 
   // Ping task: 15 minutes (900)
   int pingInterval = atoi(this->config("ping-interval", "900"));
   if (pingInterval != 0) {
-    this->addTask("Ping", pingInterval * 1000, []() {
-      if (_app->bootTimeUtc() != 0) {
+    this->addTask("Ping", pingInterval * 1000, [this]() {
+      if (this->bootTimeUtc() != 0) {
         auto wifiAddress = WiFi.localIP().toString();
-        auto pingMessage = (UTC.dateTime("Y-m-d H:i:s") + ": IP=" + wifiAddress + ";Up=" + _app->bootTimeUtcString() + ";");
+        auto pingMessage = (UTC.dateTime("Y-m-d H:i:s") + ": IP=" + wifiAddress + ";Up=" + this->bootTimeUtcString() + ";");
 
         Log::logInformation("Ping '%s'", pingMessage.c_str());
-        _app->publishData("ping", NULL, pingMessage.c_str(), true);
+        this->publishData("ping", NULL, pingMessage.c_str(), true);
       }
     });
   }
