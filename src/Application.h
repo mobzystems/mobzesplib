@@ -12,6 +12,8 @@
 #include "OledComponent.h"
 #include "OtaComponent.h"
 
+#include <functional>
+
 class Application {
   private:
   protected:
@@ -35,7 +37,7 @@ class Application {
 
   public:
     Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, size_t maxConfigValues = 50);
-    void addTask(String name, Milliseconds interval, void (*taskFunction)());
+    void addTask(String name, Milliseconds interval, std::function<void()> const taskFunction);
     void addComponent(Component *component);
     const char *config(const char *key, const char *defaultValue = NULL);
 

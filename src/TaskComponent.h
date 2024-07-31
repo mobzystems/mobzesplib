@@ -18,12 +18,12 @@ class Task
     String _name;
     Milliseconds _interval;
     Milliseconds _nextRunTime;
-    void (*_taskFunction)();
+    std::function<void()> const _taskFunction;
 
   public:
     // Constructor with a task name, interval and function
     // If the task function returns true, it continues to run
-    Task(String name, Milliseconds interval, void (*taskFunction)());
+    Task(String name, Milliseconds interval, std::function<void()> const taskFunction);
 
     // Run the task if it should
     void runIfRequired(Milliseconds currentMilliseconds);
@@ -42,7 +42,7 @@ class Tasks: public Component {
     Tasks();
 
     // Add a task to the list
-    int add(String name, Milliseconds interval, void (*taskFunction)());
+    int add(String name, Milliseconds interval, std::function<void()> const taskFunction);
 
     // Component implementations
     void setup();

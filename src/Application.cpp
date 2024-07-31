@@ -121,7 +121,7 @@ void Application::addComponent(Component *component) {
 /**
  * Add a periodic task, i.e. a callback
  */
-void Application::addTask(String name, Milliseconds interval, void (*taskFunction)()) {
+void Application::addTask(String name, Milliseconds interval, std::function<void()> const taskFunction) {
   this->_tasks->add(name, interval, taskFunction);
 }
 
