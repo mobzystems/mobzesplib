@@ -13,28 +13,6 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   _onMqttReceived(onReceived)
 {
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
-
-  // Add the free memory/loop count task
-  this->addTask("Show memory/loop status", atoi(this->config("memory-interval", "60")) * 1000, [this]()
-  {
-    static unsigned long lastMs = 0;
-
-    unsigned long ms = millis();
-    int loopSpeed = 0;
-    if (lastMs != 0) {
-      float seconds = (ms - lastMs) / 1000.0;
-      loopSpeed = (int)(this->_loopCount / seconds);
-    }
-    lastMs = ms;
-
-    uint32_t freeSize = ESP.getFreeHeap();
-
-    Log::logInformation("Free: %ld - Loop count: %d (%d/s)", freeSize, this->_loopCount, loopSpeed);
-    this->publishProperty("free", String(freeSize).c_str());
-    if (this->_loopCount > 1)
-      this->publishProperty("loops", String(loopSpeed).c_str());
-    this->_loopCount = 0;
-  });
 }
 
 MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber, size_t maxConfigValues) :
@@ -124,7 +102,7 @@ void MqttApplication::setup() {
 
   // IP task: 10 minutes (600s)
   int ipInterval = atoi(this->config("ip-interval", "600"));
-  if (ipInterval != 0) {
+  if (ipInterval > 0) {
     this->addTask("Publish IP", ipInterval * 1000, [this]() {
       auto wifiAddress = WiFi.localIP().toString();
       Log::logInformation("IP-address is now %s", wifiAddress.c_str());
@@ -134,7 +112,7 @@ void MqttApplication::setup() {
 
   // Ping task: 15 minutes (900)
   int pingInterval = atoi(this->config("ping-interval", "900"));
-  if (pingInterval != 0) {
+  if (pingInterval > 0) {
     this->addTask("Ping", pingInterval * 1000, [this]() {
       if (this->bootTimeUtc() != 0) {
         auto wifiAddress = WiFi.localIP().toString();
@@ -143,6 +121,32 @@ void MqttApplication::setup() {
         Log::logInformation("Ping '%s'", pingMessage.c_str());
         this->publishData("ping", NULL, pingMessage.c_str(), true);
       }
+    });
+  }
+
+
+  // Free memory/loop count task
+  auto memoryInterval = atoi(this->config("memory-interval", "60"));
+  if (memoryInterval > 0) {
+    this->addTask("Show memory/loop status", memoryInterval * 1000, [this]()
+    {
+      static unsigned long lastMs = 0;
+
+      unsigned long ms = millis();
+      int loopSpeed = 0;
+      if (lastMs != 0) {
+        float seconds = (ms - lastMs) / 1000.0;
+        loopSpeed = (int)(this->_loopCount / seconds);
+      }
+      lastMs = ms;
+
+      uint32_t freeSize = ESP.getFreeHeap();
+
+      Log::logInformation("Free: %ld - Loop count: %d (%d/s)", freeSize, this->_loopCount, loopSpeed);
+      this->publishProperty("free", String(freeSize).c_str());
+      if (this->_loopCount > 1)
+        this->publishProperty("loops", String(loopSpeed).c_str());
+      this->_loopCount = 0;
     });
   }
 
