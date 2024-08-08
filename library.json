@@ -13,7 +13,10 @@
   },
   "version": "0.3.1",
   "framework": "arduino",
-  "platforms": "*",
+  "platforms": [
+    "espressif8266",
+    "espressif32"
+  ]",
   "dependencies": {
     "PubSubClient": "knolleary/PubSubClient@^2.8",
     "ezTime": "ropg/ezTime@^0.8.3",
