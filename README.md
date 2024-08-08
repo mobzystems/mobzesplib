@@ -10,6 +10,10 @@ Just add a the URL of this repository to your platform.ini file:
 
 mobzesplib depends on other libraries but these will be installed automatically.
 
+If not present already, configure your file system to LittleFS:
+
+`board_build.filesystem = littlefs`
+
 **Warning**: If you see errors about header files not being found, add the following to platform.ini:
 
 `lib_ldf_mode = deep`
