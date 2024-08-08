@@ -23,7 +23,8 @@
     "ElegantOTA": "ayushsharma82/ElegantOTA@^3.1.2",
     "DHT sensor library": "adafruit/DHT sensor library@^1.4.6",
     "Adafruit Unified Sensor": "adafruit/Adafruit Unified Sensor@^1.1.14",
-    "Adafruit SSD1306": "adafruit/Adafruit SSD1306@^2.5.10"
+    "Adafruit SSD1306": "adafruit/Adafruit SSD1306@^2.5.10",
+    "u8x8": "olikraus/U8g2@^2.35.19"
   },
   "build": {
     "libArchive": false
