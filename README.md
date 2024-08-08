@@ -98,6 +98,24 @@ Using the WiFi configuration, the application will connect to WiFi and enable OT
 
 There is a sample `config.sys` file in the `data` folder in the examples.
 
+#### Custom configuration
+
+You can add your own configuration entries. The application will read them and make them available through
+
+`_app.config("key", "default-value");`
+
+This is a `const char *` that either returns the value of the key, or `"default-value"` if the key was not present. You can supply NULL as a default value.
+
+Note: the **first** value of the key encountered is used. If your configuration contains
+
+```
+key=one
+...
+key=two
+```
+
+then the value returned will be `"one"`.
+
 #### Extras
 
 `_app.enableConfigEditor("/config");`
@@ -113,17 +131,17 @@ Enable reading, writing and editing of any file in the file system at these path
 Enable serving of all files in the `/wwwroot` folder. Should be safe.
 
 ```
-_app.mapGet("/info", [](WebServer *server) {
+_app.mapGet("/info", [](WEBSERVER *server) {
     // ...
 });
 ```
 ```
-_app.mapPost("/info", [](WebServer *server) {
+_app.mapPost("/info", [](WEBSERVER *server) {
     // ...
 });
 ```
 
-Simple web server mappings using lambda functions. The single argument to the lambda function is a pointer to a `WebServer` which is an alias to the correct web server type for ESP32 or ESP8266. From within the lambda you can call `server->send()` etc.
+Simple web server mappings using lambda functions. The single argument to the lambda function is a pointer to a `WEBSERVER` which is an alias to the correct web server type for ESP32 or ESP8266. From within the lambda you can call `server->send()` etc.
 
 `_app.enableInfoPage("/info")`
 

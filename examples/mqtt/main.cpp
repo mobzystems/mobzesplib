@@ -24,17 +24,6 @@ MQTT_PREFIX/ping/<device> - ping
 MQTT_PREFIX/status/<device>/<property> - a sensor reading or a property
 
 IP is a predefined property
-
- * Library dependencies:
-
-lib_deps = 
-	knolleary/PubSubClient@^2.8
-	ropg/ezTime@^0.8.3
-	ayushsharma82/ElegantOTA@^3.1.2
-	adafruit/DHT sensor library@^1.4.6
-	adafruit/Adafruit Unified Sensor@^1.1.14
-	adafruit/Adafruit SSD1306@^2.5.10
-	https://github.com/mobzystems/mobzesplibmqtt-username=<your MQTT username>
 */
 
 #include <Application.h>
