@@ -22,7 +22,7 @@ If not present already, configure your file system to LittleFS:
 
 ### The application object
 
-The main idea behing mobzesplib is to have a single instance of the `Application` class in your project. As the examples we call it `_app` but you can choose any other name.
+The main idea behing mobzesplib is to have a single instance of the `Application` class in your project. In the examples we call it `_app` but you can choose any other name.
 
 #### Features
 
