@@ -25,9 +25,9 @@ The main idea behing mobzesplib is to have a single instance of the `Application
 The application object has a number of features built-in:
 
 - WiFi - it *connects to a WiFi network* on startup and periodically checks the connection, restoring it if possible
-- Time - using WiFi, it queries the *current time* (using ezTime)
+- Time - using WiFi, it queries the *current time* (using [ezTime](https://github.com/ropg/ezTime))
 - A *web server* on port 80 (configurable in the `Application` constructor)
-- *Over The Air (OTA) updating* of both the firmware and the contents of the file system (using ElegantOTA)
+- *Over The Air (OTA) updating* of both the firmware and the contents of the file system (using [ElegantOTA](https://github.com/ayushsharma82/ElegantOTA))
 - (optional) Configuration via a web page
 - (optional) File system editing via a web page
 
