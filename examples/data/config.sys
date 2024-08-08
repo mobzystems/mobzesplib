@@ -1,0 +1,17 @@
+# Generic
+hostname=mobzhub-default
+
+ota-username=admin
+ota-password=test
+
+timezone=Europe/Amsterdam
+
+# Wi-Fi
+wifi-ssid=YOUR_SSID
+wifi-password=YOUR_WIFI_PASSWORD
+
+# Mqtt (only when using MQTT)
+mqtt-username=YOUR_MQTT_USERNAME
+mqtt-password=YOUR_MQTT_PASSWORD
+mqtt-server=YOUR_MQTT_SERVER
+mqtt-port=YOUR_MQTT_PORT

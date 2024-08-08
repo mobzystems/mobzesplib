@@ -83,6 +83,11 @@ void Application::setup() {
   // }
 
   this->webserver()->enableCORS(true);
+
+  // Get the first available boot time
+  if (this->_bootTimeUtc == 0 && timeStatus() == timeSet) {
+    this->setBootTimeUtc(UTC.tzTime());
+  }
 }
 
 void Application::setBootTimeUtc(time_t utc) {
@@ -94,7 +99,7 @@ void Application::setBootTimeUtc(time_t utc) {
  * Call this method from your loop() method
  */
 void Application::loop() {
-  // Get the first available boot time
+  // Get the first available boot time if it wasn't available earlier
   if (this->_bootTimeUtc == 0 && timeStatus() == timeSet) {
     this->setBootTimeUtc(UTC.tzTime());
   }

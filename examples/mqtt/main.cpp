@@ -10,7 +10,9 @@ hostname=some-<your hostname>
 wifi-ssid=<Your Wifi network name>
 wifi-password=<Your Wifi password>
 
-mqtt-username=<your MQTT username>
+# Optional - this is the default
+timezone=Europe/Amsterdam
+
 mqtt-password=<your MQTT password>
 mqtt-server=<your MQTT broker>
 mqtt-port=<your MQTT port number>
@@ -21,9 +23,8 @@ MQTT_PREFIX/boot/<device> - boot time
 MQTT_PREFIX/ping/<device> - ping
 MQTT_PREFIX/status/<device>/<property> - a sensor reading or a property
 
-IP is a predefined proerty
-
- */
+IP is a predefined property
+*/
 
 #include <Application.h>
 #include <MqttComponent.h>
@@ -32,22 +33,29 @@ IP is a predefined proerty
 #define APP_TITLE "MQTT Application Example"
 #define APP_VERSION "0.0.1"
 
-#define MQTT_PREFIX "YOUR_MQTT_PREFIX/" // TODO
+#define MQTT_PREFIX "YOUR_MQTT_PREFIX" // TODO
 
+// Uncomment this to actually publish to MQTT
+#define MQTT_LOG_ONLY
+
+// The one and only global Application
 Application *_app;
+// The global MqttComponent
 MqttComponent *_mqtt = NULL;
-String _boottimeUTC;
-String _boottimeLocal;
 
 void publishData(const char *channel, const char *property, const char *value, bool retained) {
   if (_mqtt != NULL) {
     char topic[256];
     if (property == NULL)
-      snprintf(topic, sizeof(topic), MQTT_PREFIX "%s/%s", channel, _app->hostname());
+      snprintf(topic, sizeof(topic), MQTT_PREFIX "/%s/%s", channel, _app->hostname());
     else
-      snprintf(topic, sizeof(topic), MQTT_PREFIX "%s/%s/%s", channel, _app->hostname(), property);
+      snprintf(topic, sizeof(topic), MQTT_PREFIX "/%s/%s/%s", channel, _app->hostname(), property);
 
+#ifdef MQTT_LOG_ONLY
+    Log::logInformation("Publish '%s' to topic '%s'", value, topic);
+#else
     _mqtt->mqttClient()->publish(topic, value, retained);
+#endif
   }
 }
 
@@ -56,8 +64,8 @@ void publishProperty(const char *property, const char *value) {
 }
 
 void setup() {
-  Serial.begin(230400);		// Initialize serial communications with the PC
-  // while (!Serial);		    // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
+  Serial.begin(115200); // Initialize serial communications with the PC
+  // while (!Serial);   // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
 
   // TODO: choose a log level. Information is default
   Log::setSerialLogLevel(Log::LOGLEVEL::Debug);
@@ -68,7 +76,7 @@ void setup() {
   _app->setup();
 
   // --- MQTT ---
-  static String onlinetopic(String(MQTT_PREFIX "status/") + _app->hostname() + "/online");
+  static String onlinetopic(String(MQTT_PREFIX "/status/") + _app->hostname() + "/online");
 
   _app->addComponent(_mqtt = new MqttComponent(
     _app->wifi()->wifiClient(),
@@ -90,10 +98,6 @@ void setup() {
   ));
   // --- End MQTT ---
 
-  // Wifi and time avilable: sample boot time
-  _boottimeUTC = UTC.dateTime(_app->bootTimeUtc(), "Y-m-d H:i:s");
-  _boottimeLocal = _app->time()->TZ()->dateTime("Y-m-d H:i:s");
-
   _app->enableConfigEditor("/config.sys");
   // _app->enableFileEditor("/read", "/write", "/edit");
   // _app->webserver()->serveStatic("/", LittleFS, "/wwwroot/");
@@ -108,7 +112,7 @@ void setup() {
   // Ping task: 15 minutes. Sends IP-address and UTC boot time
   _app->addTask("Ping", 15 * 60 * 1000, []() {
     auto wifiAddress = WiFi.localIP().toString();
-    auto pingMessage = (UTC.dateTime("Y-m-d H:i:s") + ": IP=" + wifiAddress + ";Up=" + _boottimeUTC + ";");
+    auto pingMessage = (UTC.dateTime("Y-m-d H:i:s") + ": IP=" + wifiAddress + ";Up=" + _app->bootTimeUtcString() + ";");
 
     Log::logInformation("Ping '%s'", pingMessage.c_str());
     publishData("ping", NULL, pingMessage.c_str(), true);
@@ -121,7 +125,7 @@ void setup() {
   // });
 
   // Done initializing: publish our boot time
-  publishData("boot", NULL, (_boottimeUTC + ": Up since " + _boottimeLocal).c_str(), true);
+  publishData("boot", NULL, (_app->bootTimeUtcString() + ": Up since " + _app->bootTimeLocalString()).c_str(), true);
   // Mark ourselves as online (retained!)
   publishData("status", "online", "true", true);
 }

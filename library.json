@@ -11,9 +11,20 @@
     "type": "git",
     "url": "https://github.com/mobzystems/mobzesplib.git"
   },
-  "version": "0.2.2",
+  "version": "0.3.1",
   "framework": "arduino",
-  "platforms": "*",
+  "platforms": [
+    "espressif8266",
+    "espressif32"
+  ],
+  "dependencies": {
+    "PubSubClient": "knolleary/PubSubClient@^2.8",
+    "ezTime": "ropg/ezTime@^0.8.3",
+    "ElegantOTA": "ayushsharma82/ElegantOTA@^3.1.2",
+    "DHT sensor library": "adafruit/DHT sensor library@^1.4.6",
+    "Adafruit Unified Sensor": "adafruit/Adafruit Unified Sensor@^1.1.14",
+    "Adafruit SSD1306": "adafruit/Adafruit SSD1306@^2.5.10"
+  },
   "build": {
     "libArchive": false
   }
