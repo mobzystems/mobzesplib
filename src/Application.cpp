@@ -334,3 +334,12 @@ Adafruit_SSD1306 *Application::display() {
   else
     return this->_oled->getDisplay();
 }
+
+void Application::addU8Display(U8X8 *display) {
+  this->addComponent(this->_u8x8 = new U8DisplayComponent(display));
+  auto d = this->_u8x8->getDisplay();
+  // _display->setRotation(2); // 180
+  d->draw1x2String(0, 0, "Starting");
+  d->drawString(0, 2, this->hostname());
+  // display->display();
+}

@@ -10,6 +10,7 @@
 #include "TimeComponent.h"
 #include "TaskComponent.h"
 #include "OledComponent.h"
+#include "U8DisplayComponent.h"
 #include "OtaComponent.h"
 
 #include <functional>
@@ -24,6 +25,7 @@ class Application {
     WifiComponent *_wifi;
     TimeComponent *_time;
     OledComponent *_oled;
+    U8DisplayComponent *_u8x8;
     OtaComponent *_ota;
     uint16_t _otaPortNumber;
     const char *_hostname;
@@ -77,5 +79,8 @@ class Application {
   
     void addOledDisplay(int sda, int scl, uint8_t address);
     Adafruit_SSD1306 *display();
+
+    void addU8Display(U8X8 *display);
+    U8X8 *u8display() { return this->_u8x8 == NULL ? NULL : this->_u8x8->getDisplay(); }
 };
 #endif
