@@ -1,5 +1,5 @@
 /**
- * Complete example of an MQTT-enabled sensor-application (without the sensor)
+ * Example of an bare sensor-application (without the sensor)
  * 
  * Requires LittleFS to read /config.sys
  * 
@@ -16,18 +16,7 @@ ota-password=test
 # Optional - this is the default
 timezone=Europe/Amsterdam
 
- * Library dependencies:
-
-lib_deps = 
-	knolleary/PubSubClient@^2.8
-	ropg/ezTime@^0.8.3
-	ayushsharma82/ElegantOTA@^3.1.2
-	adafruit/DHT sensor library@^1.4.6
-	adafruit/Adafruit Unified Sensor@^1.1.14
-	adafruit/Adafruit SSD1306@^2.5.10
-	https://github.com/mobzystems/mobzesplib
-
- */
+*/
 
 #include <Application.h>
 
