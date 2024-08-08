@@ -10,6 +10,10 @@ Just add a the URL of this repository to your platform.ini file:
 
 mobzesplib depends on other libraries but these will be installed automatically.
 
+If not present already, configure your file system to LittleFS:
+
+`board_build.filesystem = littlefs`
+
 **Warning**: If you see errors about header files not being found, add the following to platform.ini:
 
 `lib_ldf_mode = deep`
@@ -18,16 +22,16 @@ mobzesplib depends on other libraries but these will be installed automatically.
 
 ### The application object
 
-The main idea behing mobzesplib is to have a single instance of the `Application` class in your project. As the examples we call it `_app` but you can choose any other name.
+The main idea behing mobzesplib is to have a single instance of the `Application` class in your project. In the examples we call it `_app` but you can choose any other name.
 
 #### Features
 
 The application object has a number of features built-in:
 
 - WiFi - it *connects to a WiFi network* on startup and periodically checks the connection, restoring it if possible
-- Time - using WiFi, it queries the *current time* (using ezTime)
+- Time - using WiFi, it queries the *current time* (using [ezTime](https://github.com/ropg/ezTime))
 - A *web server* on port 80 (configurable in the `Application` constructor)
-- *Over The Air (OTA) updating* of both the firmware and the contents of the file system (using ElegantOTA)
+- *Over The Air (OTA) updating* of both the firmware and the contents of the file system (using [ElegantOTA](https://github.com/ayushsharma82/ElegantOTA))
 - (optional) Configuration via a web page
 - (optional) File system editing via a web page
 
@@ -157,9 +161,9 @@ _app.addTask("Sample the sensor", 60 * 1000, []() {
 });
 ```
 
-You can add any number of tasks this way. The application will call the supplied lanmda function for each when it's its turn.
+You can add any number of tasks this way. The application will call the supplied lambda function for each when it's its turn.
 
-Note: Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266s loop around 20,000 times per second, and ESP32s at around 1,000 times per second to your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive.
+Note: Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266s loop around 20,000 times per second, and ESP32s at around 1,000 times per second, so your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive. The application will not call `delay()` from its own loop.
 
 ## Notes
 
