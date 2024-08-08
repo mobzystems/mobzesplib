@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <title>#FILE# - Edit</title>
+    <style>
+      body { font-family: helvetica, arial, sans-serif; display: grid; grid-template-rows: auto 1fr auto; }
+      p { margin: 0; }
+      textarea { width: 100%; height: 100%; text-wrap: nowrap; }
+      #topform { display: grid; grid-template-rows: 1fr auto; gap: 0.5rem; }
+      .message { color: red; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>File <em>#FILE#</em></h1>
+      <h2>on <em>#HOSTNAME# (#MACADDRESS#)</em></h2>
+    </div>
+    <form method="POST" id="topform">
+      <p>
+        <textarea name="text">#TEXT#</textarea>
+      </p>
+      <p>
+        <input type="submit" name="submit" value="Save" />
+        <span class="message">#MESSAGE#</span>
+      </p>
+    </form>
+    <form method="POST">
+      <p>
+        <input type="submit" name="submit" value="Reset" />
+        #APPTITLE#
+      </p>
+    </form>
+  </body>
+</html>

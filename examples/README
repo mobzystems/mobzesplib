@@ -1,0 +1,3 @@
+The data folder contains the contents of a minimal LittleFS file system.
+
+THERE MUST BE A FILE /config.sys ON THE FILE SYSTEM FOR THE APPLICATION TO WORK
