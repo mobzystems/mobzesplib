@@ -159,7 +159,7 @@ _app.addTask("Sample the sensor", 60 * 1000, []() {
 
 You can add any number of tasks this way. The application will call the supplied lambda function for each when it's its turn.
 
-Note: Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266s loop around 20,000 times per second, and ESP32s at around 1,000 times per second to your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive.
+Note: Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266s loop around 20,000 times per second, and ESP32s at around 1,000 times per second, so your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive. The application will not call `delay()` from its own loop.
 
 ## Notes
 
