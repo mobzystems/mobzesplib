@@ -117,7 +117,8 @@ _app.mapGet("/info", [](WebServer *server) {
 ```
 _app.mapPost("/info", [](WebServer *server) {
     // ...
-});```
+});
+```
 
 Simple web server mappings using lambda functions. The single argument to the lambda function is a pointer to a `WebServer` which is an alias to the correct web server type for ESP32 or ESP8266. From within the lambda you can call `server->send()` etc.
 
