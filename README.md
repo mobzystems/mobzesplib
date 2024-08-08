@@ -96,6 +96,8 @@ timezone=YOUR_TIMEZONE
 
 Using the WiFi configuration, the application will connect to WiFi and enable OTA updates. When both `ota-username` and `ota-password` are set, these are used to secure the OTA web page. After `setup()` the application's boot time is available in both local and UTC form.
 
+There is a sample `config.sys` file in the `data` folder in the examples.
+
 #### Extras
 
 `_app.enableConfigEditor("/config");`
@@ -113,7 +115,8 @@ Enable serving of all files in the `/wwwroot` folder. Should be safe.
 ```
 _app.mapGet("/info", [](WebServer *server) {
     // ...
-});```
+});
+```
 ```
 _app.mapPost("/info", [](WebServer *server) {
     // ...
@@ -128,7 +131,7 @@ Uses `mapGet()` to display a simple text-only page on the specified path. Handy 
 
 #### Adding tasks
 
-Most applications require some kind of periodic task to run, like sampling a sensor or reporting a heart beat.
+Most applications require some kind of periodic task to run, like sampling a sensor or reporting a heart beat. You can add a task using a single statement with a lambda:
 
 ```
 _app.addTask("Sample the sensor", 60 * 1000, []() {
@@ -136,7 +139,9 @@ _app.addTask("Sample the sensor", 60 * 1000, []() {
 });
 ```
 
-Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266's loop around 20,000 times per second, ESP32's at 1,000 times per second to your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive.
+You can add any number of tasks this way. The application will call the supplied lanmda function for each when it's its turn.
+
+Note: Tasks are run from `_app.loop()` and are **not** interrupt or timer based. Therefore they're not accurate at the millisecond level. But ESP8266s loop around 20,000 times per second, and ESP32s at around 1,000 times per second to your tasks will probably run on time. Using a task, you can avoid calling `delay()` and keep your process responsive.
 
 ## Notes
 
@@ -146,4 +151,4 @@ Make sure to add
 
 `lib_ldf_mode = deep`
 
-to platform.ini if you have problems loading header files. This configures the [Library dependency Finder](https://docs.platformio.org/en/latest/librarymanager/ldf.html#ldf) to 'deep' and allows mobzesplib to find the other libraries it depends on.
+to platform.ini if you have problems loading header files. This configures the [Library dependency Finder](https://docs.platformio.org/en/latest/librarymanager/ldf.html#ldf) to `deep` and allows mobzesplib to find the other libraries it depends on.
