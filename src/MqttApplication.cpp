@@ -20,6 +20,12 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
 {
 }
 
+/*
+ Set up the application. Calls the base class' setup(), then configures:
+
+ - An MQTT component
+ - Tasks for auto-reset, report IP, ping and memory/loop status
+*/
 void MqttApplication::setup() {
   Application::setup();
 
@@ -83,7 +89,7 @@ void MqttApplication::setup() {
         long uptime = this->upTimeSeconds();
         long maxUptime = this->_autoRestartTimeout * 60L;
         Log::logDebug("System uptime is %ld seconds (max. %ld)", uptime, maxUptime);
-        // Have we reached out maximum up time?
+        // Have we reached our maximum up time?
         if (uptime >= maxUptime) {
           int autoRestartHour = atoi(this->config("auto-restart-hour", "0"));
           if (this->time()->TZ()->hour() >= autoRestartHour) {
@@ -124,7 +130,6 @@ void MqttApplication::setup() {
     });
   }
 
-
   // Free memory/loop count task
   auto memoryInterval = atoi(this->config("memory-interval", "60"));
   if (memoryInterval > 0) {
@@ -153,6 +158,7 @@ void MqttApplication::setup() {
   // Publish our application name and version
   this->publishProperty("application", this->title().c_str(), true);
   this->publishProperty("version", this->version().c_str(), true);
+
   // Mark ourselves as online (retained!)
   // publishpublishProperty("online", "true", true); // Do this on MQTT connected
 }
@@ -163,6 +169,8 @@ void MqttApplication::loop() {
   this->_loopCount++;
 }
 
+// Override of setBootTimeUtc, which is called when the time becomes available.
+// First set the time in the base class, then publish it using MQTT
 void MqttApplication::setBootTimeUtc(time_t utc) {
   // Set the time in Application
   Application::setBootTimeUtc(utc);
