@@ -28,6 +28,7 @@
   },
   "build": {
     "libArchive": true,
-    "libLdfMode": "deep"
+    "libLdfMode": "deep",
+    "libCompatMode": "strict"
   }
 }
