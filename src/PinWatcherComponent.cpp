@@ -12,6 +12,8 @@ void DigitalPinWatcherComponent::setup() {
   // Read its initial value
   this->_lastValue = digitalRead(this->_pinNumber);
   Log::logDebug("[%s] Pin %d is initially %d", this->name(), this->_pinNumber, this->_lastValue);
+  // Call onvalueChanged with the initial value
+  this->_onValueChanged(this->_lastValue, this->_lastValue);
 }
 
 void DigitalPinWatcherComponent::loop() {
@@ -33,6 +35,8 @@ AnalogPinWatcherComponent::AnalogPinWatcherComponent(uint8_t pinNumber, std::fun
 void AnalogPinWatcherComponent::setup() {
   this->_lastValue = analogRead(this->_pinNumber);
   Log::logDebug("[%s] Pin %d is initially %d", this->name(), this->_pinNumber, this->_lastValue);
+  // Call onvalueChanged with the initial value
+  this->_onValueChanged(this->_lastValue, this->_lastValue);
 }
 
 void AnalogPinWatcherComponent::loop() {
