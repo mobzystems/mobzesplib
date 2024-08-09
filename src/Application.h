@@ -2,6 +2,7 @@
 #define __APPLICATION_H__
 
 #include <LittleFS.h>
+#include "ESP_HttpClient.h"
 
 #include "Logging.h"
 #include "Components.h"
@@ -10,6 +11,8 @@
 #include "TimeComponent.h"
 #include "TaskComponent.h"
 #include "OledComponent.h"
+#include "DhtComponent.h"
+#include "MqttComponent.h"
 #include "U8DisplayComponent.h"
 #include "OtaComponent.h"
 
