@@ -12,6 +12,7 @@
 #include "TaskComponent.h"
 #include "OledComponent.h"
 #include "DhtComponent.h"
+#include "BluetoothSerialComponent.h"
 #include "MqttComponent.h"
 #include "U8DisplayComponent.h"
 #include "OtaComponent.h"
