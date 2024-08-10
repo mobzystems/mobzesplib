@@ -26,7 +26,7 @@ template<typename T> class PinWatcherComponent: public Component {
 };
 
 /*
-  Analog pin watcher. Calls the provided onValueChanged function when the analog input value changes
+  Digital pin watcher. Calls the provided onValueChanged function when the digital input value changes
 */
 class DigitalPinWatcherComponent: public PinWatcherComponent<int> {
   protected:
