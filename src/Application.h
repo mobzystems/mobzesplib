@@ -10,12 +10,13 @@
 #include "WifiComponent.h"
 #include "TimeComponent.h"
 #include "TaskComponent.h"
-#include "OledComponent.h"
 #include "DhtComponent.h"
 #include "BluetoothSerialComponent.h"
 #include "MqttComponent.h"
+#include "OledComponent.h"
 #include "U8DisplayComponent.h"
 #include "OtaComponent.h"
+#include "RotaryEncoderWatcherComponent.h"
 
 #include <functional>
 
