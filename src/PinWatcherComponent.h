@@ -17,6 +17,12 @@ template<typename T> class PinWatcherComponent: public Component {
       _pinNumber(pinNumber),
       _onValueChanged(onValueChanged)
     {}
+
+    virtual void setup() {
+      Log::logDebug("[%s] Pin %d is initially %d", this->name(), this->_pinNumber, this->_lastValue);
+      // Call onvalueChanged with the initial value
+      this->_onValueChanged(this->_lastValue, this->_lastValue);
+    }
 };
 
 /*
