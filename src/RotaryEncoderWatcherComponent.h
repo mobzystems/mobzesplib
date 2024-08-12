@@ -1,3 +1,6 @@
+#ifndef __ROTARY_ENCODER_COMPONENT__
+#define __ROTARY_ENCODER_COMPONENT__
+
 #include "PinWatcherComponent.h"
 #include <RotaryEncoder.h>
 
@@ -16,3 +19,4 @@ class RotaryEncoderWatcherComponent: public PinWatcherComponent<int> {
     void setup();
     void loop();
 };
+#endif
