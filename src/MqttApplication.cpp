@@ -41,9 +41,9 @@ void MqttApplication::setup() {
 
       // Publish our boot time when we connect for the first time
       if (this->_isFirstConnect && this->bootTimeUtc() != 0) {
-        auto bootTime = (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString()).c_str();
-        Log::logDebug("[MQttApplication] Publishing boot time: %s", bootTime);
-        this->publishData("boot", NULL, bootTime, true);
+        auto bootTime = (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString());
+        Log::logDebug("[MQttApplication] Publishing boot time: %s", bootTime.c_str());
+        this->publishData("boot", NULL, bootTime.c_str(), true);
 
         this->_isFirstConnect = false;
       }
