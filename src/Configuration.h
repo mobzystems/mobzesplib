@@ -1,6 +1,7 @@
 #ifndef __CONFIGURATION_H__
 #define __CONFIGURATION_H__
 
+#include <vector>
 #include <fs.h>
 #include "logging.h"
 
@@ -8,12 +9,12 @@ class Configuration {
   private:
     size_t count;
     char *buffer;
-    const char **keys;
-    const char **values;
+    std::vector<const char *> keys;
+    std::vector<const char *> values;
 
   public:
     // Read configuration from a file
-    Configuration(FS *fileSystem, const char *filename, size_t max_values);
+    Configuration(FS *fileSystem, const char *filename, size_t initial_values);
     // Cleanup
     ~Configuration();
 

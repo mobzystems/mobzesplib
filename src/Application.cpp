@@ -10,7 +10,7 @@ const char *Application::configFileName = "/config.sys";
  * Main Application class. Initializes LittleFS and reads configuration from /config.sys
  * if LittleFS available. When setup() is called, Wifi and Time services are enabled
  */
-Application::Application(const char *title, const char *version, uint16_t otaPortNumber, size_t maxConfigValues) :
+Application::Application(const char *title, const char *version, uint16_t otaPortNumber) :
   _title(title),
   _version(version),
   _configuration(NULL),
@@ -30,7 +30,8 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   if (!LittleFS.begin()) {
     Log::logCritical("[Application] Cannot start file system, no configuration available");
   } else {
-    _configuration = new Configuration(&LittleFS, this->configFileName, maxConfigValues);
+    // Reserve 20 configuration variables initially
+    _configuration = new Configuration(&LittleFS, this->configFileName, 20);
     _configuration->log(Log::LOGLEVEL::Trace);
 
     this->_hostname = this->config("hostname", "missing-hostname");

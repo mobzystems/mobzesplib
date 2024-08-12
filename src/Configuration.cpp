@@ -1,11 +1,9 @@
 #include "configuration.h"
 
 // Read the configuration from a file
-Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_values) :
+Configuration::Configuration(FS *fileSystem, const char *filename, size_t initial_values) :
   count(0),
-  buffer(NULL),
-  keys(NULL),
-  values(NULL)
+  buffer(NULL)
 {
   File file = fileSystem->open(filename, "r");
 
@@ -25,11 +23,9 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_va
   // Close the file
   file.close();
 
-  // Create storage for the key/value pairs
-  const char *keys[max_values];
-  const char *values[max_values];
-
-  size_t count = 0;
+  // Create storage for the key/value pairs. This is only a first size to prevent too many allocactions
+  this->keys.reserve(initial_values);
+  this->values.reserve(initial_values);
 
   // Split the data into individual lines and then key=value pairs
 
@@ -55,13 +51,6 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_va
     }
     else
     {
-      // Check for overflow:
-      if (count >= max_values)
-      {
-        Log::logWarning("[Configuration] Too many key/value pairs, maximum is %d", max_values);
-        break;
-      }
-
       // Expect key=value (no spaces!) or simply key (no value)
       char *equal = strchr(line, '='); // Find separating =
       const char *value = "";          // Assume no value
@@ -75,36 +64,20 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t max_va
 
       Log::logTrace("[Configuration] Found [%s] = '%s'", key, value);
 
-      keys[count] = key;
-      values[count] = value;
-      count++;
+      this->keys.push_back(key);
+      this->values.push_back(value);
+      this->count++;
     }
 
     // Get the next line
     token = strtok(NULL, "\n");
   }
-
-  // Copy the results:
-  this->keys = new const char *[count];
-  this->values = new const char *[count];
-
-  for (size_t i = 0; i < count; i++)
-  {
-    this->keys[i] = keys[i];
-    this->values[i] = values[i];
-  }
-
-  this->count = count;
 }
 
 // Clean up configuration data. Free the file buffer
 Configuration::~Configuration()
 {
   Log::logTrace("[Configuration] Cleaning up");
-  if (this->keys != NULL)
-    delete this->keys;
-  if (this->values != NULL)
-    delete this->values;
   if (this->buffer != NULL)
     delete buffer;
   this->count = 0;
