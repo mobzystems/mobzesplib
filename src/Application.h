@@ -38,6 +38,7 @@ class Application {
     const char *_hostname;
     const String _macAddress;
     time_t _bootTimeUtc;
+    time_t _bootTimeLocal;
     unsigned long _restartDelay;
 
     String makeHtml(const char *file, const char *message);
@@ -69,7 +70,6 @@ class Application {
     // Overridables
     virtual void setup();
     virtual void loop();
-    virtual void setBootTimeUtc(time_t utc);
 
     // Informational
     const char *hostname() { return this->_hostname; }
@@ -79,9 +79,10 @@ class Application {
 
     // The system boot time - can be 0 when time not (yet) available
     time_t bootTimeUtc() { return this->_bootTimeUtc; }
+    time_t bootTimeLocal() { return this->_bootTimeLocal; }
     long upTimeSeconds()  { return UTC.now() - this->bootTimeUtc(); }
   
-    String bootTimeLocalString() { return this->bootTimeUtc() == 0 ? "" : this->time()->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
+    String bootTimeLocalString() { return this->bootTimeUtc() == 0 ? "" : this->time()->TZ()->dateTime(this->bootTimeLocal(), LOCAL_TIME, "Y-m-d H:i:s"); }
     String bootTimeUtcString() { return this->bootTimeUtc() == 0 ? "" : UTC.dateTime(this->bootTimeUtc(), "Y-m-d H:i:s"); }
 
     // Web server related

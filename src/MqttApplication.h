@@ -13,6 +13,7 @@ private:
   String _onlinetopic;
   long _loopCount;
   long _autoRestartTimeout;
+  bool _isFirstConnect;
 
   std::function<void()> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;

@@ -23,6 +23,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _hostname("default-hostname"),
   _macAddress(WiFi.macAddress()),
   _bootTimeUtc(0),
+  _bootTimeLocal(0),
   _restartDelay((unsigned long)-1)
 {
   Log::logDebug("[Application] Starting...");
@@ -83,16 +84,13 @@ void Application::setup() {
   this->setBootTimeIfAvailable();
 }
 
-void Application::setBootTimeUtc(time_t utc) {
-  this->_bootTimeUtc = UTC.tzTime();
-  Log::logDebug("[Application] Booted at %s UTC", this->_time->TZ()->dateTime(this->bootTimeUtc(), "Y-m-d H:i:s").c_str());
-}
-
 void Application::setBootTimeIfAvailable() {
   // If we don't have a boot time yet and we have a valid time, set the boot time
   // This means the boot time really is "the moment the time became available" :-(
   if (this->_bootTimeUtc == 0 && timeStatus() == timeSet) {
-    this->setBootTimeUtc(UTC.tzTime());
+    this->_bootTimeUtc = UTC.tzTime();
+    this->_bootTimeLocal = this->_time->TZ()->tzTime();
+    Log::logDebug("[Application] Booted at %s UTC", this->bootTimeUtcString().c_str());
   }  
 }
 
@@ -318,7 +316,7 @@ void Application::enableInfoPage(const char *path) {
       "\r\nIP: " + this->wifi()->wifiClient()->localIP().toString() + 
       "\r\nMAC: " + WiFi.macAddress() +
       "\r\nCPU: " + this->chipModelName() +
-      "\r\nBootUTC: " + this->bootTimeLocalString() +
+      "\r\nBootUTC: " + this->bootTimeUtcString() +
       "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s")
     );
   });  

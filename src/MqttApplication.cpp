@@ -9,6 +9,7 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
   _onlinetopic(String(mqttPrefix) + "/status/" + this->hostname() + "/online"),
   _loopCount(0),
   _autoRestartTimeout(atoi(Application::config("auto-restart-timeout", "0"))),
+  _isFirstConnect(true),
   _onMqttConnected(onConnected),
   _onMqttReceived(onReceived)
 {
@@ -37,6 +38,16 @@ void MqttApplication::setup() {
     this->hostname(),
     [this](PubSubClient *client) -> void {
       Log::logDebug("[MqttApplication] Connected to MQTT");
+
+      // Publish our boot time when we connect for the first time
+      if (this->_isFirstConnect && this->bootTimeUtc() != 0) {
+        auto bootTime = (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString()).c_str();
+        Log::logDebug("[MQttApplication] Publishing boot time: %s", bootTime);
+        this->publishData("boot", NULL, bootTime, true);
+
+        this->_isFirstConnect = false;
+      }
+
       // We have just connected to the broker. Subscribe to topics here if necessary
       // We subscribe to .../online to detect when someone else marks us as offline ("false")
       // This can happen when we reboot. Our last will is published after the existing session
@@ -169,14 +180,15 @@ void MqttApplication::loop() {
   this->_loopCount++;
 }
 
-// Override of setBootTimeUtc, which is called when the time becomes available.
-// First set the time in the base class, then publish it using MQTT
-void MqttApplication::setBootTimeUtc(time_t utc) {
-  // Set the time in Application
-  Application::setBootTimeUtc(utc);
-  // Done initializing: publish our boot time
-  this->publishData("boot", NULL, (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString()).c_str(), true);
-}
+// // Override of setBootTimeUtc, which is called when the time becomes available.
+// // First set the time in the base class, then publish it using MQTT
+// void MqttApplication::setBootTimeUtc(time_t utc) {
+//   // Set the time in Application
+//   Application::setBootTimeUtc(utc);
+//   // Done initializing: publish our boot time
+//   Log::logDebug("[MQttApplication] Publishing boot time");
+//   this->publishData("boot", NULL, (this->bootTimeUtcString() + ": Up since " + this->bootTimeLocalString()).c_str(), true);
+// }
 
 void MqttApplication::publishData(const char *channel, const char *property, const char *value, bool retained) {
   if (this->_mqtt != NULL) {
