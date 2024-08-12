@@ -1,6 +1,8 @@
 # mobzesplib
 
-This is a collection of handy utility classes for ESP32/ESP8266 Arduino/Platform.io projects
+This is a sort-of application framework for ESP32/ESP8266 Arduino/[PlatformIO](https://platformio.org/) projects. Essentially, it provides a single Application class that offers a number of features, all configurable using a single text file in LittleFS. Most important among these are a WiFi connection, the current time, a built-in web server, OTA updating, and periodic task execution.
+
+Also, there is a en extended class called MqttApplication, that layers Mqtt support on top of Application. It can connect to an Mqtt broker, and send and receive Mqtt messages. This makes it a great starting point for "sensor apps": applications that monitor some external data and report periodically to a central location.
 
 ## Installation
 
@@ -108,7 +110,7 @@ You can add your own configuration entries. The application will read them and m
 
 `_app.config("key", "default-value");`
 
-This is a `const char *` that either returns the value of the key, or `"default-value"` if the key was not present. You can supply NULL as a default value.
+This returns a `const char *` that either points to the value of the key, or to `"default-value"` if the key was not present. You can supply NULL as a default value.
 
 Note: the **first** value of the key encountered is used. If your configuration contains
 
@@ -128,7 +130,7 @@ Enable editing of the `/config.sys` configuration file at the path `/config`. No
 
 `_app.enableFileEditor("/read", "/write", "/edit");`
 
-Enable reading, writing and editing of any file in the file system at these paths. Needless to say: **dangerous, use at your won risk**. Doesn't have authentication (yet).
+Enable reading, writing and editing of any file in the file system at these paths. Needless to say: **dangerous, use at your own risk**. Doesn't have authentication (yet).
 
 `_app.webserver()->serveStatic("/", LittleFS, "/wwwroot/");`
 
@@ -174,3 +176,5 @@ Make sure to add
 `lib_ldf_mode = deep`
 
 to platform.ini if you have problems loading header files. This configures the [Library dependency Finder](https://docs.platformio.org/en/latest/librarymanager/ldf.html#ldf) to `deep` and allows mobzesplib to find the other libraries it depends on.
+
+(Note on note: this should not be neccessary anymore from version 0.3.1 onwards. By restructuring the inclusion of header files the normal LDF mode ('chain') will find all header files.)
