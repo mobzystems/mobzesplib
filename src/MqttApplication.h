@@ -15,12 +15,12 @@ private:
   long _autoRestartTimeout;
   bool _isFirstConnect;
 
-  std::function<void()> const _onMqttConnected;
+  std::function<void(PubSubClient *client)> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
 
 public:
   MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80);
-  MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void()> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber = 80);
+  MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void(PubSubClient *client)> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber = 80);
 
   MqttComponent *mqtt() { return this->_mqtt; }
 

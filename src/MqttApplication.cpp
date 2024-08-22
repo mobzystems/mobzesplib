@@ -2,7 +2,12 @@
 
 #include "Logging.h"
 
-MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void()> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber) :
+MqttApplication::MqttApplication(
+  const char *title, const char *version, const char *mqttPrefix,
+  std::function<void(PubSubClient *client)> const onConnected,
+  std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived,
+  uint16_t otaPortNumber
+) :
   Application(title, version, otaPortNumber),
   _mqtt(NULL),
   _mqttPrefix(mqttPrefix),
@@ -60,7 +65,7 @@ void MqttApplication::setup() {
 
       if (this->_onMqttConnected != NULL) {
         Log::logTrace("[MqttApplication] Calling onMqttConnected");
-        this->_onMqttConnected();
+        this->_onMqttConnected(client);
       }
     },
     [this](const char *topic, const byte *payload, unsigned int length) -> void {
