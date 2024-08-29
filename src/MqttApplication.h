@@ -19,8 +19,8 @@ private:
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
 
 public:
-  MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80);
-  MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void(PubSubClient *client)> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber = 80);
+  MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80, const char *configuration = NULL);
+  MqttApplication(const char *title, const char *version, const char *mqttPrefix, std::function<void(PubSubClient *client)> const onConnected, std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived, uint16_t otaPortNumber = 80, const char *configuration = NULL);
 
   MqttComponent *mqtt() { return this->_mqtt; }
 

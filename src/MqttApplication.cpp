@@ -6,9 +6,10 @@ MqttApplication::MqttApplication(
   const char *title, const char *version, const char *mqttPrefix,
   std::function<void(PubSubClient *client)> const onConnected,
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived,
-  uint16_t otaPortNumber
+  uint16_t otaPortNumber,
+  const char *configuration
 ) :
-  Application(title, version, otaPortNumber),
+  Application(title, version, otaPortNumber, configuration),
   _mqtt(NULL),
   _mqttPrefix(mqttPrefix),
   _onlinetopic(String(mqttPrefix) + "/status/" + this->hostname() + "/online"),
@@ -21,8 +22,8 @@ MqttApplication::MqttApplication(
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
 }
 
-MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber) :
-  MqttApplication(title, version, mqttPrefix, NULL, NULL, otaPortNumber)
+MqttApplication::MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber, const char *configuration) :
+  MqttApplication(title, version, mqttPrefix, NULL, NULL, otaPortNumber, configuration)
 {
 }
 
