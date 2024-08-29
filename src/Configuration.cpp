@@ -1,17 +1,28 @@
 #include "configuration.h"
 
 // Read the configuration from a file
+Configuration::Configuration(const char *configuration, size_t initial_values) :
+  count(0),
+  buffer(new char[strlen(configuration) + 1])
+{
+  // Copy the configuration to the buffer
+  strcpy(buffer, configuration);
+  // Initialize from the buffer
+  this->readFromBuffer(initial_values);
+}
+
+// Read the configuration from a file
 Configuration::Configuration(FS *fileSystem, const char *filename, size_t initial_values) :
   count(0),
   buffer(NULL)
 {
+  // Read the configuration file into memory
   File file = fileSystem->open(filename, "r");
 
   if (!file)
   {
     Log::logWarning("[Configuration] Could not open '%s'", filename);
-
-    return;
+  	return;
   }
 
   // Allocate a buffer large enough to hold the entire file
@@ -23,6 +34,21 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t initia
   // Close the file
   file.close();
 
+  // Initialize our variables from the buffer
+  this->readFromBuffer(initial_values);
+}
+
+// Clean up configuration data. Free the file buffer
+Configuration::~Configuration()
+{
+  Log::logTrace("[Configuration] Cleaning up");
+  if (this->buffer != NULL)
+    delete buffer;
+  this->count = 0;
+}
+
+void Configuration::readFromBuffer(size_t initial_values)
+{
   // Create storage for the key/value pairs. This is only a first size to prevent too many allocactions
   this->keys.reserve(initial_values);
   this->values.reserve(initial_values);
@@ -30,7 +56,7 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t initia
   // Split the data into individual lines and then key=value pairs
 
   // Tokenize with \n:
-  char *token = strtok(buffer, "\n");
+  char *token = strtok(this->buffer, "\n");
   while (token != NULL)
   {
     char *line = token;
@@ -72,15 +98,6 @@ Configuration::Configuration(FS *fileSystem, const char *filename, size_t initia
     // Get the next line
     token = strtok(NULL, "\n");
   }
-}
-
-// Clean up configuration data. Free the file buffer
-Configuration::~Configuration()
-{
-  Log::logTrace("[Configuration] Cleaning up");
-  if (this->buffer != NULL)
-    delete buffer;
-  this->count = 0;
 }
 
 // Send the configuration to log

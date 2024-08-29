@@ -48,7 +48,7 @@ class Application {
 
   public:
     // Constructor
-    Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80);
+    Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, const char *configuration = NULL);
 
     // Get a configuration value
     const char *config(const char *key, const char *defaultValue = NULL);

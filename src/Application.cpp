@@ -10,7 +10,7 @@ const char *Application::configFileName = "/config.sys";
  * Main Application class. Initializes LittleFS and reads configuration from /config.sys
  * if LittleFS available. When setup() is called, Wifi and Time services are enabled
  */
-Application::Application(const char *title, const char *version, uint16_t otaPortNumber) :
+Application::Application(const char *title, const char *version, uint16_t otaPortNumber, const char *configuration) :
   _title(title),
   _version(version),
   _configuration(NULL),
@@ -28,17 +28,24 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
 {
   Log::logDebug("[Application] Starting...");
 
-  if (!LittleFS.begin()) {
-    Log::logCritical("[Application] Cannot start file system, no configuration available");
+  if (configuration != NULL) {
+    Log::logDebug("[Application] Reading configuration from string");
+    this->_configuration = new Configuration(configuration, 20);
   } else {
-    // Reserve 20 configuration variables initially
-    _configuration = new Configuration(&LittleFS, this->configFileName, 20);
-    _configuration->log(Log::LOGLEVEL::Trace);
-
-    this->_hostname = this->config("hostname", "missing-hostname");
-    // wifiSsid = conf.value("wifi-ssid", "[Missing wifi-ssid]");
-    // wifiPassword = conf.value("wifi-password", "[Missing wifi-password]");    
+    if (!LittleFS.begin()) {
+      Log::logCritical("[Application] Cannot start file system, no configuration available");
+    } else {
+      // Reserve 20 configuration variables initially
+      this->_configuration = new Configuration(&LittleFS, this->configFileName, 20);
+    }
   }
+
+  if (this->_configuration != NULL) {
+    this->_configuration->log(Log::LOGLEVEL::Trace);
+    this->_hostname = this->config("hostname", "missing-hostname");
+  }
+  // wifiSsid = conf.value("wifi-ssid", "[Missing wifi-ssid]");
+  // wifiPassword = conf.value("wifi-password", "[Missing wifi-password]");    
 
   Components::add(this->_tasks);
   Log::logDebug("[Application] created.");

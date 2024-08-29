@@ -12,9 +12,13 @@ class Configuration {
     std::vector<const char *> keys;
     std::vector<const char *> values;
 
+    void readFromBuffer(size_t initial_values);
+
   public:
     // Read configuration from a file
     Configuration(FS *fileSystem, const char *filename, size_t initial_values);
+    // Read configuration from a strnng
+    Configuration(const char *configuration, size_t initial_values);
     // Cleanup
     ~Configuration();
 
