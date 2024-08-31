@@ -43,7 +43,13 @@ void WifiComponent::setup()
 
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
 
-  Log::logDebug("[%s] Connecting to WiFi network '%s'...", name(), this->_ssid.c_str());
+  Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",
+    name(),
+    this->_ssid.c_str(),
+    this->_watchdogTimeoutSeconds,
+    this->_intervalMs / 1000,
+    this->_waitMs / 1000
+  );
   setStatus(1000, Log::LOGLEVEL::Information, "Connecting");
   unsigned long ms = millis();
 
@@ -93,7 +99,7 @@ void WifiComponent::loop()
         Log::logInformation("[%s] *Not* reconnected!", name());
     }
     else
-      Log::logDebug("[%s] Still connected.", name());
+      Log::logDebug("[%s] Still connected to %s.", name(), WiFi.localIP().toString().c_str());
 
     this->_lastCheckTime = millis();
   }

@@ -65,10 +65,17 @@ const char *Application::config(const char *key, const char *defaultValue) {
  */
 void Application::setup() {
   // Set up wifi and time components
+  // Log::logDebug("[Application] Connecting to WiFi network with timeout %d, interval %d, wait %d seconds",
+  //   atoi(this->config("wifi-watchdog-timeout", "30")),
+  //   atoi(this->config("wifi-interval", "30")),
+  //   atoi(this->config("wifi-wait", "2"))
+  // );
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
     this->config("wifi-ssid"), this->config("wifi-password"), 
-    atoi(this->config("wifi-watchdog-timeout", "30"))
+    atoi(this->config("wifi-watchdog-timeout", "30")),
+    atoi(this->config("wifi-interval", "30")) * 1000,
+    atoi(this->config("wifi-wait", "2")) * 1000
   ));
 
   // Set up the time component with a default timeout
