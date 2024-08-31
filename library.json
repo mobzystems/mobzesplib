@@ -18,6 +18,7 @@
     "espressif32"
   ],
   "dependencies": {
+    "Adafruit BME280": "adafruit/Adafruit BME280 Library@^2.2.4",
     "PubSubClient": "knolleary/PubSubClient@^2.8",
     "ezTime": "ropg/ezTime@^0.8.3",
     "ElegantOTA": "ayushsharma82/ElegantOTA@^3.1.2",
