@@ -57,6 +57,7 @@ void WifiComponent::setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     if (this->_watchdogTimeoutSeconds != 0 && millis() > ms + this->_watchdogTimeoutSeconds * 1000) {
+      Serial.println();
       setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
       Log::logCritical("[%s] No connection after %d seconds, restarting...", name(), this->_watchdogTimeoutSeconds);
       delay(2000);
