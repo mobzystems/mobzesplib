@@ -32,13 +32,14 @@ WifiComponent::WifiComponent(
 void WifiComponent::setup()
 {
   // --- Configure WIFI ---
+
+  // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
+  WiFi.setHostname(this->_hostname.c_str());
   WiFi.persistent(false);
 #if defined(ESP32)
   // This causes "IP unset" on ESP8266!
   WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 #endif
-  // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
-  WiFi.setHostname(this->_hostname.c_str());
   WiFi.mode(WIFI_STA);
 
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
@@ -63,10 +64,13 @@ void WifiComponent::setup()
       ESP.restart();
     }
     Log::logTrace("[%s] Still connecting...", name());
+    Serial.print(".");
     setStatus(1000, Log::LOGLEVEL::Trace, ("Connecting " + String(1 + (millis() - ms) / 1000) /* + "/" + String(this->_watchdogTimeoutSeconds) */).c_str());
     delay(500);
   }
 
+  Serial.println();
+  
   if (WiFi.status() == WL_CONNECTED) {
     setStatus(2000, Log::LOGLEVEL::Information, "Connected");
     Log::logInformation("[%s] Connected '%s' to '%s' at %s (MAC %s)", name(), WiFi.getHostname(), this->_ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());

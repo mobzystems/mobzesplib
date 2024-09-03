@@ -30,11 +30,8 @@ void Log::setTimezone(Timezone *timezone, const char *format)
   Log::timeFormat = format;
 }
 
-void Log::logMessage(LOGLEVEL level, const char *format, ...)
+void Log::va_logMessage(LOGLEVEL level, const char *format, va_list args)
 {
-  va_list args;
-  va_start(args, format);
-
   char loc_buf[MAX_LOGMESSAGE_SIZE + 1] = "";
 
   char *p = loc_buf;
@@ -75,9 +72,34 @@ void Log::logMessage(LOGLEVEL level, const char *format, ...)
   vsnprintf(p, sizeof(loc_buf) - (p - loc_buf), format, args);
     for (auto logger: Log::_loggers)
       logger->println(level, loc_buf);
+}
+
+void Log::logMessage(LOGLEVEL level, const char *format, ...)
+{
+  va_list args;
+  va_start(args, format);
+
+  Log::va_logMessage(level, format, args);
 
   va_end(args);
 }
+
+// #define the implementation of LogXXX as a macro calling va_logMessage
+#define LOGMESSAGE(LVL) \
+void Log::log##LVL(const char *format, ...) { \
+  va_list args; \
+  va_start(args, format); \
+  Log::va_logMessage(Log::LVL, format, args); \
+  va_end(args); \
+}
+
+// These declare real methods, e.g. Log::logTrace(const char *format, ...)
+LOGMESSAGE(Trace)
+LOGMESSAGE(Debug)
+LOGMESSAGE(Information)
+LOGMESSAGE(Warning)
+LOGMESSAGE(Error)
+LOGMESSAGE(Critical)
 
 bool Logger::println(Log::LOGLEVEL level, const char *message) {
   if (level < this->_minLevel)

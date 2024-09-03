@@ -24,7 +24,7 @@ private:
   static const char *timeFormat;
 
   static std::vector<Logger *> _loggers;
-
+  
 public:
   // The various log levels
   enum LOGLEVEL
@@ -50,6 +50,25 @@ public:
 
   // A callback function that gets called for each call to logMessage()
   // static void (*callback)(LOGLEVEL level, const char *message);
+
+  // Various logging shorthands
+
+  // Log a trace message
+  static void logTrace(const char *format, ...);
+  // Log a debug message
+  static void logDebug(const char *format, ...);
+  // Log an informational message
+  static void logInformation(const char *format, ...);
+  // Log a warning
+  static void logWarning(const char *format, ...);
+  // Log an error
+  static void logError(const char *format, ...);
+  // Log a critical message
+  static void logCritical(const char *format, ...);
+
+protected:
+  // Interal method to support logXXX shorthands
+  static void va_logMessage(LOGLEVEL level, const char *format, va_list args);
 };
 
 class Logger {
@@ -74,13 +93,4 @@ class SerialLogger: public Logger {
     static const char *name;
     SerialLogger(Log::LOGLEVEL minLevel = Log::LOGLEVEL::Information) : Logger(name, minLevel, &Serial) {}
 };
-
-// Various logging macros
-#define logTrace(format, ...) logMessage(Log::Trace, format __VA_OPT__(, ) __VA_ARGS__)
-#define logDebug(format, ...) logMessage(Log::Debug, format __VA_OPT__(, ) __VA_ARGS__)
-#define logInformation(format, ...) logMessage(Log::Information, format __VA_OPT__(, ) __VA_ARGS__)
-#define logWarning(format, ...) logMessage(Log::Warning, format __VA_OPT__(, ) __VA_ARGS__)
-#define logError(format, ...) logMessage(Log::Error, format __VA_OPT__(, ) __VA_ARGS__)
-#define logCritical(format, ...) logMessage(Log::Critical, format __VA_OPT__(, ) __VA_ARGS__)
-
 #endif
