@@ -237,7 +237,7 @@ String Application::makeHtml(const char *file, const char *message) {
 
 void Application::enableConfigEditor(const char *path) {
   this->mapGet(path, [this](WEBSERVER *server) {
-    server->sendContent(this->makeHtml("/config.sys", NULL));
+    server->send(200, "text/html", this->makeHtml("/config.sys", NULL));
   });
 
   this->mapPost(path, [this](WEBSERVER *server) {
@@ -245,12 +245,12 @@ void Application::enableConfigEditor(const char *path) {
     if (t == "Save") {
       auto s = server->arg("text");
       writeFile("/config.sys", s.c_str());
-      server->sendContent(this->makeHtml("/config.sys", "Contents were changed."));
+      server->send(200, "text/html", this->makeHtml("/config.sys", "Contents were changed."));
     } else if (t == "Reset") {
-      server->sendContent("Reset requested.");
+      server->send(200, "text/plain", "Reset requested.");
       this->requestReset(3000);
     } else {
-      server->sendContent("GOT:" + t);
+      server->send(200, "text/plain", "GOT:" + t);
     }
   });
 }
@@ -262,7 +262,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
       if (path.length() == 0)
         server->send(400);
       else if (LittleFS.exists(path))
-        server->sendContent(readFile(path.c_str()));
+        server->send(200, "text/plain", readFile(path.c_str()));
       else
         server->send(404, "text/plain", "File not found: " + path);
     });
@@ -287,7 +287,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
       if (path.length() == 0)
         server->send(400);
       else
-        server->sendContent(this->makeHtml(path.c_str(), NULL));
+        server->send(200, "text/html", this->makeHtml(path.c_str(), NULL));
     });
 
     this->mapPost(editPath, [this](WEBSERVER *server) {
@@ -298,7 +298,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
       else {
         auto s = server->arg("text");
         writeFile(path.c_str(), s.c_str());
-        server->sendContent(this->makeHtml(path.c_str(), "Contents were changed."));
+        server->send(200, "text/html", this->makeHtml(path.c_str(), "Contents were changed."));
       }
     });
   }
