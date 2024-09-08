@@ -135,6 +135,15 @@ void MqttApplication::setup() {
     });
   }
 
+  int rssiInterval = atoi(this->config("rssi-interval", "60"));
+  if (rssiInterval > 0) {
+    this->addTask("Publish RSSI", rssiInterval * 1000, [this]() {
+      auto rssi = WiFi.RSSI();
+      Log::logInformation("RSSI is now %d", rssi);
+      this->publishProperty("RSSI", String(rssi).c_str());
+    });
+  }
+
   // Ping task: 15 minutes (900)
   int pingInterval = atoi(this->config("ping-interval", "900"));
   if (pingInterval > 0) {

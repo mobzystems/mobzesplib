@@ -104,7 +104,7 @@ void WifiComponent::loop()
         Log::logInformation("[%s] *Not* reconnected!", name());
     }
     else
-      Log::logDebug("[%s] Still connected to %s.", name(), WiFi.localIP().toString().c_str());
+      Log::logDebug("[%s] Still connected to %s (%d dBm).", name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
 
     this->_lastCheckTime = millis();
   }

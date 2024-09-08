@@ -328,6 +328,7 @@ void Application::enableInfoPage(const char *path) {
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
       "\r\nIP: " + this->wifi()->wifiClient()->localIP().toString() + 
+      "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
       "\r\nMAC: " + WiFi.macAddress() +
       "\r\nCPU: " + this->chipModelName() +
       "\r\nBootUTC: " + this->bootTimeUtcString() +
