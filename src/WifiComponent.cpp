@@ -33,6 +33,7 @@ void WifiComponent::setup()
 {
   // --- Configure WIFI ---
 
+  WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
   // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
   WiFi.setHostname(this->_hostname.c_str());
   WiFi.persistent(false);
