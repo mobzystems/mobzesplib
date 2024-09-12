@@ -33,7 +33,11 @@ void WifiComponent::setup()
 {
   // --- Configure WIFI ---
 
+#if defined(ESP32)
+  // Make sure we connect to the strongest access point
+  WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SIGNAL);
   WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
+#endif
   // Set Wifi host name BEFORE calling WiFi.mode, otherwise it won't work on ESP32
   WiFi.setHostname(this->_hostname.c_str());
   WiFi.persistent(false);
@@ -43,7 +47,32 @@ void WifiComponent::setup()
 #endif
   WiFi.mode(WIFI_STA);
 
+#if !defined(ESP32)
+  Log::logDebug("Starting WiFi-scan...");
+  int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
+  uint8_t *bssid = NULL;
+
+  if (n == 0) {
+    Log::logWarning("No networks with SSID '%s' found", this->_ssid.c_str());
+  } else {
+    int bestMatch = 0;
+    int bestRSSI = WiFi.RSSI(0);
+    for (int i = 0; i < n; i++) {
+      // Look for a stronger BSSID
+      if (i > 0 && WiFi.RSSI(i) > bestRSSI) {
+        bestMatch = i;
+        bestRSSI = WiFi.RSSI(i);
+      }
+      Log::logDebug("%d: %s (%d dBm) BSSID %s", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
+    }
+    Log::logInformation("Choosing BSSID '%s'", WiFi.BSSIDstr(bestMatch).c_str());
+    bssid = WiFi.BSSID(bestMatch);
+  }
+  WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
+#else
+  // Just connect, let WiFi do its thing
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+#endif
 
   Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",
     name(),
@@ -75,7 +104,7 @@ void WifiComponent::setup()
   
   if (WiFi.status() == WL_CONNECTED) {
     setStatus(2000, Log::LOGLEVEL::Information, "Connected");
-    Log::logInformation("[%s] Connected '%s' to '%s' at %s (MAC %s)", name(), WiFi.getHostname(), this->_ssid.c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
+    Log::logInformation("[%s] Connected '%s' to '%s' (%s) at %s (MAC %s)", name(), WiFi.getHostname(), WiFi.SSID().c_str(), WiFi.BSSIDstr().c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
   } else {
     setStatus(9000, Log::LOGLEVEL::Error, "NOT connected");
     Log::logCritical("[%s] Cannot connect to WiFi", name());
