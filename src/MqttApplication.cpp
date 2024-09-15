@@ -107,7 +107,7 @@ void MqttApplication::setup() {
         Log::logInformation("Uptime: time not available yet");
       } else {
         long uptime = this->upTimeSeconds();
-        long maxUptime = this->_autoRestartTimeout * 60L;
+        long maxUptime = this->_autoRestartTimeout;
         Log::logDebug("System uptime is %ld seconds (max. %ld)", uptime, maxUptime);
         // Have we reached our maximum up time?
         if (uptime >= maxUptime) {
