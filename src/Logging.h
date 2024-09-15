@@ -1,6 +1,7 @@
 #ifndef __LOGGING_H__
 #define __LOGGING_H__
 
+#include <Arduino.h>
 #include <eztime.h>
 #include <Print.h>
 #include <vector>

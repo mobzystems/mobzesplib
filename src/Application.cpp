@@ -73,15 +73,15 @@ void Application::setup() {
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
     this->config("wifi-ssid"), this->config("wifi-password"), 
-    atoi(this->config("wifi-watchdog-timeout", "30")),
-    atoi(this->config("wifi-interval", "30")) * 1000,
-    atoi(this->config("wifi-wait", "2")) * 1000
+    Duration::parse(this->config("wifi-watchdog-timeout", "30")),
+    Duration::parse(this->config("wifi-interval", "30")) * 1000,
+    Duration::parse(this->config("wifi-wait", "2")) * 1000
   ));
 
   // Set up the time component with a default timeout
   Components::add(this->_time = new TimeComponent(
     this->config("timezone", "Europe/Amsterdam"),
-    atoi(this->config("time-timeout", "5"))
+    Duration::parse(this->config("time-timeout", "5"))
   ));
 
   // OTA:

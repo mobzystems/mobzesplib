@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include "ESP_HttpClient.h"
 
+#include "Duration.h"
 #include "Logging.h"
 #include "Components.h"
 #include "Configuration.h"

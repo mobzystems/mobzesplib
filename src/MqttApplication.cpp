@@ -14,7 +14,7 @@ MqttApplication::MqttApplication(
   _mqttPrefix(mqttPrefix),
   _onlinetopic(String(mqttPrefix) + "/status/" + this->hostname() + "/online"),
   _loopCount(0),
-  _autoRestartTimeout(atoi(Application::config("auto-restart-timeout", "0"))),
+  _autoRestartTimeout(Duration::parse(Application::config("auto-restart-timeout", "0"))),
   _isFirstConnect(true),
   _onMqttConnected(onConnected),
   _onMqttReceived(onReceived)
@@ -92,7 +92,8 @@ void MqttApplication::setup() {
         }
       }
     }, 
-    atoi(this->config("mqtt-interval", "300")) * 1000, // Check for lost connection every 5 minutes (default)
+    // Check for lost connection every 5 minutes (default)
+    Duration::parse(this->config("mqtt-interval", "5m")) * 1000,
     this->_onlinetopic.c_str(),
     "false"
   ));
@@ -100,7 +101,7 @@ void MqttApplication::setup() {
   // Auto-restart task
   if (this->_autoRestartTimeout > 0) {
     // Check every 15 minutes for an auto-restart
-    this->addTask("Check auto-restart", atoi(this->config("auto-restart-interval", "900")) * 1000, [this]()
+    this->addTask("Check auto-restart", Duration::parse(this->config("auto-restart-interval", "15m")) * 1000, [this]()
     {
       if (this->bootTimeUtc() == 0) {
         Log::logInformation("Uptime: time not available yet");
@@ -126,7 +127,7 @@ void MqttApplication::setup() {
   }
 
   // IP task: 10 minutes (600s)
-  int ipInterval = atoi(this->config("ip-interval", "600"));
+  int ipInterval = Duration::parse(this->config("ip-interval", "10m"));
   if (ipInterval > 0) {
     this->addTask("Publish IP", ipInterval * 1000, [this]() {
       auto wifiAddress = WiFi.localIP().toString();
@@ -135,7 +136,7 @@ void MqttApplication::setup() {
     });
   }
 
-  int rssiInterval = atoi(this->config("rssi-interval", "60"));
+  int rssiInterval = Duration::parse(this->config("rssi-interval", "1m"));
   if (rssiInterval > 0) {
     this->addTask("Publish RSSI", rssiInterval * 1000, [this]() {
       auto rssi = WiFi.RSSI();
@@ -145,7 +146,7 @@ void MqttApplication::setup() {
   }
 
   // Ping task: 15 minutes (900)
-  int pingInterval = atoi(this->config("ping-interval", "900"));
+  int pingInterval = Duration::parse(this->config("ping-interval", "15m"));
   if (pingInterval > 0) {
     this->addTask("Ping", pingInterval * 1000, [this]() {
       if (this->bootTimeUtc() != 0) {
@@ -159,7 +160,7 @@ void MqttApplication::setup() {
   }
 
   // Free memory/loop count task
-  auto memoryInterval = atoi(this->config("memory-interval", "60"));
+  auto memoryInterval = Duration::parse(this->config("memory-interval", "1m"));
   if (memoryInterval > 0) {
     this->addTask("Show memory/loop status", memoryInterval * 1000, [this]()
     {
