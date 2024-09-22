@@ -332,7 +332,8 @@ void Application::enableInfoPage(const char *path) {
       "\r\nMAC: " + WiFi.macAddress() +
       "\r\nCPU: " + this->chipModelName() +
       "\r\nBootUTC: " + this->bootTimeUtcString() +
-      "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s")
+      "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s") + 
+      "\r\nUptime: " + String(this->upTimeSeconds()) + "s (" + String(this->upTimeSeconds() / 3600) + "h)" 
     );
   });  
 }
