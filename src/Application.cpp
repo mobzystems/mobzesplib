@@ -316,14 +316,29 @@ const String &Application::chipModelName() {
 #endif
 }
 
-void Application::enableInfoPage(const char *path) {
-  this->mapGet("/info", [this](WEBSERVER *server) {
+void Application::enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo) {
+  this->mapGet("/info", [this, postProcessInfo](WEBSERVER *server) {
     // if(!_webServer->authenticate("123", "456"))
     //   _webServer->requestAuthentication();
     // else
 
-    // _webServer->enableCORS(true); // Already enabled thruogh application
-    server->send(200, "text/plain",
+    // _webServer->enableCORS(true); // Already enabled through application
+    // Make sure uptime is positive. If not, seconds can be [-59, 59] and consequently
+    // %02d can output THREE characters (-59!) which causes a warning on sprintf()
+    long uptime = abs(this->upTimeSeconds());
+    int seconds = (int)(uptime % 60);
+    uptime /= 60;
+    int minutes = (int)(uptime % 60);
+    uptime /= 60;
+    int hours = (int)(uptime % 24);
+    uptime /= 24;
+    // Make days a short so we don't get a warning in sprintf() for a too-short buffer
+  	short days = (short)uptime;
+
+    char upbuffer[] = "xxxxxd, HH:MM:SS"; // A %02d can contain a minus sign
+    sprintf(upbuffer, "%hdd, %02d:%02d:%02d", days, hours, minutes, seconds);
+
+    String initialResponse = 
       String("Hostname: ") + String(this->hostname()) + 
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
@@ -333,8 +348,13 @@ void Application::enableInfoPage(const char *path) {
       "\r\nCPU: " + this->chipModelName() +
       "\r\nBootUTC: " + this->bootTimeUtcString() +
       "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s") + 
-      "\r\nUptime: " + String(this->upTimeSeconds()) + "s (" + String(this->upTimeSeconds() / 3600) + "h)" 
-    );
+      "\r\nUptime: " + String(upbuffer)
+    ;
+
+    if (postProcessInfo != NULL)
+      postProcessInfo(initialResponse);
+
+    server->send(200, "text/plain", initialResponse.c_str());
   });  
 }
 

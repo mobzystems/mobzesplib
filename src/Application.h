@@ -93,7 +93,7 @@ class Application {
     void enableConfigEditor(const char *path = "/config");
     void enableFileEditor(const char *readPath, const char *writePath, const char *editPath);
 
-    void enableInfoPage(const char *path);
+    void enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo = NULL);
 
     // The name of the config file. Can be overriden BEFORE constructing the Application
     static const char *configFileName;
