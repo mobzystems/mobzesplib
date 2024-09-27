@@ -178,8 +178,6 @@ String Application::HtmlEncode(const char *s) {
 }
 
 String Application::makeHtml(const char *file, const char *message) {
-    String s = readFile(file);
-
     String html = LittleFS.exists("/wwwroot/edit-file.html")
       ? readFile("/wwwroot/edit-file.html")
       : R"###(
@@ -190,7 +188,7 @@ String Application::makeHtml(const char *file, const char *message) {
       body { font-family: helvetica, arial, sans-serif; display: grid; grid-template-rows: auto 1fr auto; }
       p { margin: 0; }
       textarea { width: 100%; height: 100%; text-wrap: nowrap; }
-      #topform { display: grid; grid-template-rows: 1fr auto; gap: 0.5rem; }
+      #topform { display: grid; grid-template-rows: 1fr auto; gap: 0.5rem; margin: 0; }
       .message { color: red; }
     </style>
   </head>
@@ -207,8 +205,6 @@ String Application::makeHtml(const char *file, const char *message) {
         <input type="submit" name="submit" value="Save" />
         <span class="message">#MESSAGE#</span>
       </p>
-    </form>
-    <form method="POST">
       <p>
         <input type="submit" name="submit" value="Reset" />
         #APPTITLE#
@@ -217,6 +213,7 @@ String Application::makeHtml(const char *file, const char *message) {
   </body>
 </html>
 )###";
+
     if (message == NULL)
       html.replace("#MESSAGE#", "");
     else
@@ -225,12 +222,15 @@ String Application::makeHtml(const char *file, const char *message) {
     html.replace("#FILE#", this->HtmlEncode(file));
     html.replace("#HOSTNAME#", this->HtmlEncode(this->hostname()));
     html.replace("#MACADDRESS#", this->HtmlEncode(this->_macAddress.c_str()));
-    html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
 
     String appTitle = this->_title;
     if (this->_version.length() > 0)
       appTitle += " v" + this->_version;
     html.replace("#APPTITLE#", appTitle);
+
+    // Do this one LAST otherwise it will also replace in s!
+    String s = readFile(file);
+    html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
 
     return html;
 }
