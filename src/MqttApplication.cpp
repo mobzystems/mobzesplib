@@ -106,20 +106,36 @@ void MqttApplication::setup() {
       if (this->bootTimeUtc() == 0) {
         Log::logInformation("Uptime: time not available yet");
       } else {
-        long uptime = this->upTimeSeconds();
+        long uptimeSeconds = this->upTimeSeconds();
         long maxUptime = this->_autoRestartTimeout;
-        Log::logDebug("System uptime is %ld seconds (max. %ld)", uptime, maxUptime);
+        Log::logDebug("System uptime is %ld seconds (max. %ld)", uptimeSeconds, maxUptime);
         // Have we reached our maximum up time?
-        if (uptime >= maxUptime) {
-          int autoRestartHour = atoi(this->config("auto-restart-hour", "0"));
-          if (this->time()->TZ()->hour() >= autoRestartHour) {
+        if (uptimeSeconds >= maxUptime) {
+          // Default time range is [0, 23] which is 'anytime'
+          int autoRestartHourMin = atoi(this->config("auto-restart-hour-min", "0"));
+          int autoRestartHourMax = atoi(this->config("auto-restart-hour-max", "23"));
+          int localHour = this->time()->TZ()->hour();
+
+          bool inRestartTimeRange = false;
+          // Do we have 3-4? (Or 3-3)
+          if (autoRestartHourMin <= autoRestartHourMax)
+            // Then we're in range if 3 <= h <= 4
+            inRestartTimeRange = localHour >= autoRestartHourMin && localHour <= autoRestartHourMax;
+          else if (autoRestartHourMin > autoRestartHourMax)
+            // We have 22-3 (meaning 22-03h), so we need >= 22 *OR* <= 3
+            inRestartTimeRange = localHour >= autoRestartHourMin || localHour <= autoRestartHourMax;
+
+          if (inRestartTimeRange) {
             Log::logInformation("Uptime > %d minutes, restarting...", this->_autoRestartTimeout);
-            this->publishProperty("autorestart", UTC.dateTime("Y-m-d H:i:s").c_str(), true);
+            this->publishProperty("autorestart", (UTC.dateTime("Y-m-d H:i:s") + " (" + String(uptimeSeconds) + "s)").c_str(), true);
+            // Perform a clean disconnect from MQTT
             this->mqtt()->mqttClient()->disconnect();
+            // Wait a bit
             delay(5000);
+            // Then restart
             ESP.restart();
           } else {
-            Log::logInformation("Uptime > %ld minutes, but hour (%d) is not yet %d.", uptime / 60, this->time()->TZ()->hour(), autoRestartHour);
+            Log::logInformation("Uptime > %ld minutes, but hour (%d) is not %d-%d.", uptimeSeconds / 60, this->time()->TZ()->hour(), autoRestartHourMin, autoRestartHourMax);
           }
         }
       }
