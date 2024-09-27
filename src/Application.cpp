@@ -321,22 +321,12 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
     // if(!_webServer->authenticate("123", "456"))
     //   _webServer->requestAuthentication();
     // else
-
     // _webServer->enableCORS(true); // Already enabled through application
-    // Make sure uptime is positive. If not, seconds can be [-59, 59] and consequently
-    // %02d can output THREE characters (-59!) which causes a warning on sprintf()
-    long uptime = abs(this->upTimeSeconds());
-    int seconds = (int)(uptime % 60);
-    uptime /= 60;
-    int minutes = (int)(uptime % 60);
-    uptime /= 60;
-    int hours = (int)(uptime % 24);
-    uptime /= 24;
-    // Make days a short so we don't get a warning in sprintf() for a too-short buffer
-  	short days = (short)uptime;
 
-    char upbuffer[] = "xxxxxd, HH:MM:SS"; // A %02d can contain a minus sign
-    sprintf(upbuffer, "%hdd, %02d:%02d:%02d", days, hours, minutes, seconds);
+    Duration d(this->upTimeSeconds());
+
+    char upbuffer[] = "xxxxxd, HH:MM:SS";
+    sprintf(upbuffer, "%hdd, %02hd:%02hd:%02hd", d.days % 100000, d.hours % 100, d.minutes % 100, d.seconds % 100);
 
     String initialResponse = 
       String("Hostname: ") + String(this->hostname()) + 

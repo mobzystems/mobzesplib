@@ -5,19 +5,28 @@
 
 #include "Logging.h"
 
-int Duration::parse(const char *input, char default_unit) {
-  int seconds = 0;
+Duration::Duration(unsigned int totalSeconds) {
+  this->seconds = (uint8_t)(totalSeconds % 60);
+  totalSeconds /= 60;
+  this->minutes = (uint8_t)(totalSeconds % 60);
+  totalSeconds /= 60;
+  this->hours = (uint8_t)(totalSeconds % 24);
+  totalSeconds /= 24;
+  this->days = (uint8_t)totalSeconds;
+}
+
+unsigned int Duration::totalSeconds() {
+  return this->seconds + 60U * (this->minutes + 60U * (this->hours + 24U * this->days));
+}
+
+unsigned int Duration::parse(const char *input, char default_unit) {
+  unsigned int seconds = 0;
 
   // Start parsing.
   const char *p = input;
   for (;;) {
-    // // Skip spaces
-    // while (*p == ' ') p++;
-    // // No more? Done
-    // if (*p == '\0')
-    //   break;
-
     // Allow spaces and some punctuation characters as a delimiter, e.g. 1d,5h or even "   1d   ;  5m"
+    // This is very permissive: leading delimiters are acceptable, e.g. ,,1d:5h
     if (*p == ' ' || *p == ',' || *p == '.' || *p == ';' || *p == ':' || *p == '/')
       p++;
     // No more? Done
@@ -25,7 +34,7 @@ int Duration::parse(const char *input, char default_unit) {
       break;
 
     // "Eat" digits to form a number
-    int number = 0;
+    unsigned int number = 0;
     while (isdigit(*p)) {
       int n = *p - '0';
       number = number * 10 + n;
@@ -57,4 +66,4 @@ int Duration::parse(const char *input, char default_unit) {
 
   Log::logTrace("[Duration] '%s' -> %d seconds", input, seconds);
   return seconds;
-};
+}

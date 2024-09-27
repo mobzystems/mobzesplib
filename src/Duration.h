@@ -6,8 +6,25 @@
 /**
  * Duration class to parse string of the format 1d2h6m into a number of seconds.
  */
-class Duration {
-public:
+struct Duration {
+  uint16_t days;
+  uint8_t hours;
+  uint8_t minutes;
+  uint8_t seconds;
+
+  // Constructor with days, hours, minutes, seconds
+  Duration(uint16_t days, uint8_t hours, uint8_t minutes, uint8_t seconds) :
+    days(days), hours(hours), minutes(minutes), seconds(seconds) {}
+
+  // Constructor with days = 0
+  Duration(uint8_t hours, uint8_t minutes, uint8_t seconds) : Duration(0, hours, minutes, seconds) {}
+
+  // Constructor from total number of seconds
+  Duration(unsigned int totalSeconds);
+
+  // Calculate total number of seconds, handy for normalized()
+  unsigned int totalSeconds();
+
   /**
    * Parse a string into a number of seconds.
    * input: string of the form <group>[<delimiter><group>]+
@@ -30,6 +47,9 @@ public:
    * 1m   ;  20s -> 80
    * 3h20m5s -> 3 hours, 20 minutes, 5 seconds = 12005 seconds
    */
-  static int parse(const char *input, char default_unit = 's');
+  static unsigned int parse(const char *input, char default_unit = 's');
+
+  // Return a normalized version of ourselves, e.g. one where 25h70m is 1d2h10m
+  Duration normalized() { return Duration(this->totalSeconds()); }
 };
 #endif
