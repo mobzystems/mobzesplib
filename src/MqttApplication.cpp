@@ -126,12 +126,12 @@ void MqttApplication::setup() {
             inRestartTimeRange = localHour >= autoRestartHourMin || localHour <= autoRestartHourMax;
 
           if (inRestartTimeRange) {
-            Log::logInformation("Uptime > %d minutes, restarting...", this->_autoRestartTimeout);
+            Log::logInformation("Uptime > %d seconds, restarting...", this->_autoRestartTimeout);
             this->publishProperty("autorestart", (UTC.dateTime("Y-m-d H:i:s") + " (" + String(uptimeSeconds) + "s)").c_str(), true);
-            // Perform a clean disconnect from MQTT
-            this->mqtt()->mqttClient()->disconnect();
             // Wait a bit
             delay(5000);
+            // Perform a clean disconnect from MQTT
+            this->mqtt()->mqttClient()->disconnect();
             // Then restart
             ESP.restart();
           } else {
