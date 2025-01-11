@@ -8,12 +8,12 @@ MqttLogger::MqttLogger(MqttComponent *mqtt, const char *topic, int max_size, Log
   Logger("MqttLogger", minLevel, [this](const char *message) {
     // Save the message in the backlog UNLESS WE'RE ALREADY SENDING
     if (!_blocked) {
-    // Capture the log message
-    Serial.println(String(">>> MQTT: ") + message);
-    _backlog.push(String(message));
+      // Capture the log message
+      Serial.println(String(">>> MQTT: ") + message);
+      _backlog.push(String(message));
 
-    while ((int)_backlog.size() > _max_size)
-      _backlog.pop();
+      while ((int)_backlog.size() > _max_size)
+        _backlog.pop();
     }
   }),
   _mqtt(mqtt),
