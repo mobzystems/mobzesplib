@@ -50,6 +50,8 @@ public:
 
   static void addLogger(Logger *logger);
 
+  static LOGLEVEL parseLogLevel(String name, LOGLEVEL defaultLevel);
+
   // A callback function that gets called for each call to logMessage()
   // static void (*callback)(LOGLEVEL level, const char *message);
 

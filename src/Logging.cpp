@@ -24,6 +24,27 @@ void Log::setSerialLogLevel(LOGLEVEL level)
   }
 }
 
+Log::LOGLEVEL Log::parseLogLevel(String name, LOGLEVEL defaultLevel)
+{
+  if (name.equalsIgnoreCase("N") || name.equalsIgnoreCase("Off") || name.equalsIgnoreCase("None"))
+    return LOGLEVEL::None;
+  if (name.equalsIgnoreCase("T") || name.equalsIgnoreCase("TRC") || name.equalsIgnoreCase("Trace"))
+    return LOGLEVEL::Trace;
+  if (name.equalsIgnoreCase("D") || name.equalsIgnoreCase("DBG") || name.equalsIgnoreCase("Debug"))
+    return LOGLEVEL::Debug;
+  if (name.equalsIgnoreCase("I") || name.equalsIgnoreCase("INF") || name.equalsIgnoreCase("Information"))
+    return LOGLEVEL::Information;
+  if (name.equalsIgnoreCase("W") || name.equalsIgnoreCase("WRN") || name.equalsIgnoreCase("Warning"))
+    return LOGLEVEL::Warning;
+  if (name.equalsIgnoreCase("E") || name.equalsIgnoreCase("ERR") || name.equalsIgnoreCase("Error"))
+    return LOGLEVEL::Error;
+  if (name.equalsIgnoreCase("C") || name.equalsIgnoreCase("CRT") || name.equalsIgnoreCase("Critical"))
+    return LOGLEVEL::Critical;
+  
+  // Return default if none
+  return defaultLevel;
+}
+
 void Log::setTimezone(Timezone *timezone, const char *format)
 {
   Log::timezone = timezone;
