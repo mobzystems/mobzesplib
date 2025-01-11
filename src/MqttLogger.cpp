@@ -12,7 +12,7 @@ MqttLogger::MqttLogger(MqttComponent *mqtt, const char *topic, int max_size, Log
     Serial.println(String(">>> MQTT: ") + message);
     _backlog.push(String(message));
 
-    while (!_backlog.size() > _max_size)
+    while ((int)_backlog.size() > _max_size)
       _backlog.pop();
     }
   }),
