@@ -5,6 +5,7 @@
 #include <eztime.h>
 #include <Print.h>
 #include <vector>
+#include <functional>
 
 #define LOG_DEFAULT_TIME_FORMAT "Y-m-d H:i:s "
 
@@ -77,13 +78,13 @@ class Logger {
     const char *_name;
     Log::LOGLEVEL _minLevel;
     Print *_destination;
-    void (*_printFunction)(const char *);
+    std::function<void(const char *)> const _printFunction;
 
   public:
     // A logger with a Print destination
     Logger(const char *name, Log::LOGLEVEL minLevel, Print *destination) : _name(name), _minLevel(minLevel), _destination(destination), _printFunction(NULL) {}
     // A logger with some other println() function
-    Logger(const char *name, Log::LOGLEVEL minLevel, void (*printFunction)(const char *)) : _name(name), _minLevel(minLevel), _destination(NULL), _printFunction(printFunction) {}
+    Logger(const char *name, Log::LOGLEVEL minLevel, std::function<void(const char *)> const printFunction) : _name(name), _minLevel(minLevel), _destination(NULL), _printFunction(printFunction) {}
     bool println(Log::LOGLEVEL level, const char *message);
     bool is(const char *name) { return strcmp(this->_name, name) == 0; }
     void setLogLevel(Log::LOGLEVEL level) { this->_minLevel = level; }
