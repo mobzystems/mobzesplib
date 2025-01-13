@@ -1,6 +1,8 @@
 #include "MqttComponent.h"
 #include "logging.h"
 
+#include "Specific_ESP_Wifi.h"
+
 /***
  * Create a new MqttComponent
  */
@@ -64,6 +66,10 @@ void MqttComponent::reconnect()
     else
     {
       Log::logError("[%s] Connection failed, state = %d", this->name(), this->_mqttClient.state());
+      // RESET WIFI if reconnection failed:
+      WiFi.disconnect();
+      delay(1000);
+      Log::logDebug("Wifi disconnected, status is %d", WiFi.status());
     }
   }
 }

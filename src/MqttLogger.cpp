@@ -1,5 +1,7 @@
 #include "MqttLogger.h"
 
+// #define LOG
+
 /*
  * MqttLogger class. Saves logged messages in a backlog buffer and publishes
  * them as soon as loop() is called and the Mqtt client is connected.
@@ -9,7 +11,9 @@ MqttLogger::MqttLogger(MqttComponent *mqtt, const char *topic, int max_size, Log
     // Save the message in the backlog UNLESS WE'RE ALREADY SENDING
     if (!_blocked) {
       // Capture the log message
+#ifdef LOG
       Serial.println(String(">>> MQTT: ") + message);
+#endif
       _backlog.push(String(message));
 
       while ((int)_backlog.size() > _max_size)
@@ -31,14 +35,20 @@ void MqttLogger::loop() {
     if (_mqtt->mqttClient()->connected()) {
       // Block re-entry
       _blocked = true;
+#ifdef LOG
       Serial.println("--- Start of backlog");
+#endif
       while (!_backlog.empty()) {
         auto msg = _backlog.front();
+#ifdef LOG
         Serial.println(msg);
+#endif
         _mqtt->mqttClient()->publish(_topic.c_str(), msg.c_str());
         _backlog.pop();
       }
+#ifdef LOG
       Serial.println("--- End of backlog");
+#endif
       // Allow re-entry
       _blocked = false;
     }

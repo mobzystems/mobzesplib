@@ -126,15 +126,22 @@ void WifiComponent::loop()
     {
       Log::logWarning("[%s] Disconnected! Reconnecting...", name());
       // WiFi.disconnect();
-      WiFi.reconnect();
-      delay(this->_waitMs);
+      WiFi.reconnect(); // Includes a disonnect()
+      
+      // Wait fot the reconnection:
+      auto ms = 0;
+      do {
+        delay(1000);
+        ms += 1000;
+      } while (ms < this->_waitMs && WiFi.status() != WL_CONNECTED);
+      // delay(this->_waitMs);
       if (WiFi.status() == WL_CONNECTED)
-        Log::logInformation("[%s] Reconnected.", name());
+        Log::logInformation("[%s] Reconnected after %d seconds to %s (%d dBm).", name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
       else
         Log::logWarning("[%s] *Not* reconnected!", name());
     }
     else
-      Log::logDebug("[%s] Still connected to %s (%d dBm).", name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
+      Log::logDebug("[%s] Wifi connected to %s (%d dBm).", name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
 
     this->_lastCheckTime = millis();
   }
