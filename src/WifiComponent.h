@@ -17,7 +17,7 @@ class WifiComponent: public Component {
     uint32_t _waitMs;
 
     unsigned long _lastCheckTime;
-    WiFiClient _wifiClient;
+    static WiFiClient _wifiClient;
 
     uint16_t _watchdogTimeoutSeconds;
 

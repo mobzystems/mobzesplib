@@ -3,6 +3,8 @@
 
 #include "Specific_ESP_Wifi.h"
 
+WiFiClient WifiComponent::_wifiClient;
+
 // Create a new WiFiComponent with host name and wifi credentials, plus an optional connection check
 WifiComponent::WifiComponent(
   // The host name to use
@@ -70,8 +72,8 @@ void WifiComponent::setup()
   }
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
 #else
-  // Just connect, let WiFi do its thing
-  WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+// Just connect, let WiFi do its thing
+WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
 #endif
 
   Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",

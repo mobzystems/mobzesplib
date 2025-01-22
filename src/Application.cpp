@@ -332,8 +332,9 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       String("Hostname: ") + String(this->hostname()) + 
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
-      "\r\nIP: " + this->wifi()->wifiClient()->localIP().toString() + 
+      "\r\nIP: " + this->wifi()->wifiClient()->localIP().toString() + "/" + WiFi.localIP().toString() + 
       "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
+      "\r\nBSSID: " +  WiFi.BSSIDstr() +
       "\r\nMAC: " + WiFi.macAddress() +
       "\r\nCPU: " + this->chipModelName() +
       "\r\nBootUTC: " + this->bootTimeUtcString() +
