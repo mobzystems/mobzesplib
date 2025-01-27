@@ -66,10 +66,10 @@ void MqttComponent::reconnect()
     else
     {
       Log::logError("[%s] Connection failed, state = %d", this->name(), this->_mqttClient.state());
-      // RESET WIFI if reconnection failed:
-      WiFi.disconnect();
-      delay(1000);
-      Log::logDebug("[%s] Wifi disconnected, status is %d", this->name(), WiFi.status());
+      // // RESET WIFI if reconnection failed. Do not do this anymore - it doesn't seem necessary
+      // WiFi.disconnect();
+      // delay(1000);
+      // Log::logDebug("[%s] Wifi disconnected, status is %d", this->name(), WiFi.status());
     }
   }
 }
