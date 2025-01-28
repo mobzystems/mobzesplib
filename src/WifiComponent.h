@@ -29,6 +29,9 @@ class WifiComponent: public Component {
     // Required by Component
     void setup();
     void loop();
+
+    // Scan WiFi networks for the configured SSID and connect to the strongest BSSID
+    String connectToStrongest(); // --> BSSID
 };
 
 #endif

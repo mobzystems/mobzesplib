@@ -49,32 +49,7 @@ void WifiComponent::setup()
 #endif
   WiFi.mode(WIFI_STA);
 
-#if !defined(ESP32)
-  Log::logDebug("Starting WiFi-scan...");
-  int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
-  uint8_t *bssid = NULL;
-
-  if (n == 0) {
-    Log::logWarning("No networks with SSID '%s' found", this->_ssid.c_str());
-  } else {
-    int bestMatch = 0;
-    int bestRSSI = WiFi.RSSI(0);
-    for (int i = 0; i < n; i++) {
-      // Look for a stronger BSSID
-      if (i > 0 && WiFi.RSSI(i) > bestRSSI) {
-        bestMatch = i;
-        bestRSSI = WiFi.RSSI(i);
-      }
-      Log::logDebug("%d: %s (%d dBm) BSSID %s", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
-    }
-    Log::logInformation("Choosing BSSID '%s'", WiFi.BSSIDstr(bestMatch).c_str());
-    bssid = WiFi.BSSID(bestMatch);
-  }
-  WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
-#else
-// Just connect, let WiFi do its thing
-WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
-#endif
+  this->connectToStrongest();
 
   Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",
     name(),
@@ -127,10 +102,12 @@ void WifiComponent::loop()
     if (WiFi.status() != WL_CONNECTED)
     {
       Log::logWarning("[%s] Disconnected! Reconnecting...", name());
-      // WiFi.disconnect();
-      WiFi.reconnect(); // Includes a disonnect()
+
+      this->connectToStrongest();
+
+      // WiFi.reconnect(); // Includes a disconnect()
       
-      // Wait fot the reconnection:
+      // Wait for the reconnection:
       auto ms = 0;
       do {
         delay(1000);
@@ -147,4 +124,35 @@ void WifiComponent::loop()
 
     this->_lastCheckTime = millis();
   }
+}
+
+String WifiComponent::connectToStrongest() {
+  #if !defined(ESP32)
+    Log::logDebug("Starting WiFi-scan...");
+    int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
+    uint8_t *bssid = NULL;
+
+    if (n == 0) {
+      Log::logWarning("No networks with SSID '%s' found", this->_ssid.c_str());
+      return "";
+    }
+
+    int bestMatch = 0;
+    int bestRSSI = WiFi.RSSI(0);
+    for (int i = 0; i < n; i++) {
+      // Look for a stronger BSSID
+      if (i > 0 && WiFi.RSSI(i) > bestRSSI) {
+        bestMatch = i;
+        bestRSSI = WiFi.RSSI(i);
+      }
+      Log::logDebug("%d: %s (%d dBm) BSSID %s", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
+    }
+    Log::logInformation("Choosing BSSID '%s'", WiFi.BSSIDstr(bestMatch).c_str());
+    bssid = WiFi.BSSID(bestMatch);
+    WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
+    return WiFi.BSSIDstr(bestMatch);
+  #else
+  // Just connect, let WiFi do its thing
+  WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+  #endif
 }
