@@ -4,6 +4,9 @@
 
 #include "Specific_ESP_Wifi.h"
 
+// The one and only application instance
+Application *Application::_app = NULL;
+
 const char *Application::configFileName = "/config.sys";
 
 /**
@@ -26,6 +29,9 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _bootTimeLocal(0),
   _restartTimeMs((unsigned long)-1)
 {
+  // Set the singleton appliction object
+  this->_app = this;
+
   Log::logDebug("[Application] Starting...");
 
   if (configuration != NULL) {
@@ -70,6 +76,9 @@ void Application::setup() {
   //   atoi(this->config("wifi-interval", "30")),
   //   atoi(this->config("wifi-wait", "2"))
   // );
+
+  Log::logDebug("[Application] Starting setup...");
+
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
     this->config("wifi-ssid"), this->config("wifi-password"), 
@@ -96,6 +105,8 @@ void Application::setup() {
 
   // Get the first available boot time
   this->setBootTimeIfAvailable();
+
+  Log::logDebug("[Application] Setup completed.");
 }
 
 void Application::setBootTimeIfAvailable() {

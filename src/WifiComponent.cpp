@@ -154,5 +154,6 @@ String WifiComponent::connectToStrongest() {
 #else
   // Just connect, let WiFi do its thing
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+  return "";
 #endif
 }

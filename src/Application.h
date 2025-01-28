@@ -46,9 +46,14 @@ class Application {
     String HtmlEncode(const char *s);
     void setBootTimeIfAvailable();
 
+    static Application *_app;
+
   public:
     // Constructor
     Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, const char *configuration = NULL);
+
+    // Get the single Application instance
+    static Application *app() { return _app; }
 
     // Get a configuration value
     const char *config(const char *key, const char *defaultValue = NULL);
