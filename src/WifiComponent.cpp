@@ -127,32 +127,32 @@ void WifiComponent::loop()
 }
 
 String WifiComponent::connectToStrongest() {
-  #if !defined(ESP32)
-    Log::logDebug("[%s] Starting WiFi-scan...", this->name());
-    int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
-    uint8_t *bssid = NULL;
+#if !defined(ESP32)
+  Log::logDebug("[%s] Starting WiFi-scan...", this->name());
+  int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
+  uint8_t *bssid = NULL;
 
-    if (n == 0) {
-      Log::logWarning("[%s] No networks with SSID '%s' found", this->name(), this->_ssid.c_str());
-      return "";
-    }
+  if (n == 0) {
+    Log::logWarning("[%s] No networks with SSID '%s' found", this->name(), this->_ssid.c_str());
+    return "";
+  }
 
-    int bestMatch = 0;
-    int bestRSSI = WiFi.RSSI(0);
-    for (int i = 0; i < n; i++) {
-      // Look for a stronger BSSID
-      if (i > 0 && WiFi.RSSI(i) > bestRSSI) {
-        bestMatch = i;
-        bestRSSI = WiFi.RSSI(i);
-      }
-      Log::logDebug("[%s] %2d: %s (%d dBm) BSSID %s", this->name(), i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
+  int bestMatch = 0;
+  int bestRSSI = WiFi.RSSI(0);
+  for (int i = 0; i < n; i++) {
+    // Look for a stronger BSSID
+    if (i > 0 && WiFi.RSSI(i) > bestRSSI) {
+      bestMatch = i;
+      bestRSSI = WiFi.RSSI(i);
     }
-    Log::logInformation("[%s] Choosing BSSID '%s'", this->name(), WiFi.BSSIDstr(bestMatch).c_str());
-    bssid = WiFi.BSSID(bestMatch);
-    WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
-    return WiFi.BSSIDstr(bestMatch);
-  #else
+    Log::logDebug("[%s] %2d: %s (%d dBm) BSSID %s", this->name(), i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
+  }
+  Log::logInformation("[%s] Choosing BSSID '%s'", this->name(), WiFi.BSSIDstr(bestMatch).c_str());
+  bssid = WiFi.BSSID(bestMatch);
+  WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
+  return WiFi.BSSIDstr(bestMatch);
+#else
   // Just connect, let WiFi do its thing
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
-  #endif
+#endif
 }
