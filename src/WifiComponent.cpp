@@ -113,9 +113,9 @@ void WifiComponent::loop()
         delay(1000);
         ms += 1000;
       } while (ms < this->_waitMs && WiFi.status() != WL_CONNECTED);
-      // delay(this->_waitMs);
+
       if (WiFi.status() == WL_CONNECTED)
-        Log::logInformation("[%s] Reconnected after %d seconds to %s (%d dBm).", name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        Log::logWarning("[%s] Reconnected after %d seconds to %s (%d dBm).", name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
       else
         Log::logWarning("[%s] *Not* reconnected!", name());
     }
@@ -127,9 +127,12 @@ void WifiComponent::loop()
 }
 
 String WifiComponent::connectToStrongest() {
-#if !defined(ESP32)
   Log::logDebug("[%s] Starting WiFi-scan...", this->name());
+#ifdef ESP32
+  int n = WiFi.scanNetworks(false, false, false, 300U, 0, this->_ssid.c_str());
+#else
   int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
+#endif
   uint8_t *bssid = NULL;
 
   if (n == 0) {
@@ -151,9 +154,4 @@ String WifiComponent::connectToStrongest() {
   bssid = WiFi.BSSID(bestMatch);
   WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
   return WiFi.BSSIDstr(bestMatch);
-#else
-  // Just connect, let WiFi do its thing
-  WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
-  return "";
-#endif
 }

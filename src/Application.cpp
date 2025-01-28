@@ -84,7 +84,7 @@ void Application::setup() {
     this->config("wifi-ssid"), this->config("wifi-password"), 
     Duration::parse(this->config("wifi-watchdog-timeout", "30")),
     Duration::parse(this->config("wifi-interval", "30")) * 1000,
-    Duration::parse(this->config("wifi-wait", "2")) * 1000
+    Duration::parse(this->config("wifi-wait", "20")) * 1000
   ));
 
   // Set up the time component with a default timeout
