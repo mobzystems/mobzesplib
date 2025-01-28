@@ -158,6 +158,10 @@ void MqttApplication::setup() {
       auto rssi = WiFi.RSSI();
       Log::logInformation("RSSI is now %d", rssi);
       this->publishProperty("RSSI", String(rssi).c_str());
+
+      auto bssid = WiFi.BSSIDstr();
+      Log::logInformation("BSSID is now %s", bssid.c_str());
+      this->publishProperty("BSSID", bssid.c_str());
     });
   }
 

@@ -131,7 +131,7 @@ void WifiComponent::loop()
       WiFi.reconnect(); // Includes a disonnect()
       
       // Wait fot the reconnection:
-      auto ms = 0;
+      unsigned int ms = 0;
       do {
         delay(1000);
         ms += 1000;
