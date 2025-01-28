@@ -40,12 +40,11 @@ class Application {
     const String _macAddress;
     time_t _bootTimeUtc;
     time_t _bootTimeLocal;
-    unsigned long _restartDelay;
+    unsigned long _restartTimeMs;
 
     String makeHtml(const char *file, const char *message);
     String HtmlEncode(const char *s);
     void setBootTimeIfAvailable();
-    void requestReset(unsigned long delay) { _restartDelay = delay; }
 
   public:
     // Constructor
@@ -97,5 +96,7 @@ class Application {
 
     // The name of the config file. Can be overriden BEFORE constructing the Application
     static const char *configFileName;
+    // Schedule a reset after a delay
+    void scheduleRestart(unsigned long delayMs);
 };
 #endif

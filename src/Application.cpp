@@ -24,7 +24,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _macAddress(WiFi.macAddress()),
   _bootTimeUtc(0),
   _bootTimeLocal(0),
-  _restartDelay((unsigned long)-1)
+  _restartTimeMs((unsigned long)-1)
 {
   Log::logDebug("[Application] Starting...");
 
@@ -119,10 +119,8 @@ void Application::loop() {
 
   Components::loop();
 
-  if (this->_restartDelay != (unsigned long)-1) {
-    Log::logWarning("[Application] Restart requested in %ld ms", this->_restartDelay);
-    if (this->_restartDelay != 0)
-      delay(this->_restartDelay);
+  if (this->_restartTimeMs != (unsigned long)-1 && millis() > this->_restartTimeMs) {
+    // Log::logWarning("[Application] Restart requested in %ld ms", this->_restartDelay);
     Log::logInformation("[Application] Restarting.");
     this->webserver()->stop();
     ESP.restart();
@@ -248,7 +246,7 @@ void Application::enableConfigEditor(const char *path) {
       server->send(200, "text/html", this->makeHtml("/config.sys", "Contents were changed."));
     } else if (t == "Reset") {
       server->send(200, "text/plain", "Reset requested.");
-      this->requestReset(3000);
+      this->scheduleRestart(3000);
     } else {
       server->send(200, "text/plain", "GOT:" + t);
     }
@@ -374,4 +372,9 @@ void Application::addU8Display(U8X8 *display) {
   d->draw1x2String(0, 0, "Starting");
   d->drawString(0, 2, this->hostname());
   // display->display();
+}
+
+void Application::scheduleRestart(unsigned long delayMs) {
+  Log::logWarning("[Application] Scheduling restart after %lu ms", delayMs);
+  _restartTimeMs = millis() + delayMs;
 }
