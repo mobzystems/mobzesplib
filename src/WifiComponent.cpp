@@ -128,12 +128,12 @@ void WifiComponent::loop()
 
 String WifiComponent::connectToStrongest() {
   #if !defined(ESP32)
-    Log::logDebug("Starting WiFi-scan...");
+    Log::logDebug("[%s] Starting WiFi-scan...", this->name());
     int n = WiFi.scanNetworks(false, false, 0, (uint8*)this->_ssid.c_str());
     uint8_t *bssid = NULL;
 
     if (n == 0) {
-      Log::logWarning("No networks with SSID '%s' found", this->_ssid.c_str());
+      Log::logWarning("[%s] No networks with SSID '%s' found", this->name(), this->_ssid.c_str());
       return "";
     }
 
@@ -145,9 +145,9 @@ String WifiComponent::connectToStrongest() {
         bestMatch = i;
         bestRSSI = WiFi.RSSI(i);
       }
-      Log::logDebug("%d: %s (%d dBm) BSSID %s", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
+      Log::logDebug("[%s] %2d: %s (%d dBm) BSSID %s", this->name(), i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.BSSIDstr(i).c_str());
     }
-    Log::logInformation("Choosing BSSID '%s'", WiFi.BSSIDstr(bestMatch).c_str());
+    Log::logInformation("[%s] Choosing BSSID '%s'", this->name(), WiFi.BSSIDstr(bestMatch).c_str());
     bssid = WiFi.BSSID(bestMatch);
     WiFi.begin(this->_ssid.c_str(), this->_password.c_str(), 0, bssid);
     return WiFi.BSSIDstr(bestMatch);
