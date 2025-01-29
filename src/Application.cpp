@@ -70,13 +70,6 @@ const char *Application::config(const char *key, const char *defaultValue) {
  * Setup the application. Must be called after construction!
  */
 void Application::setup() {
-  // Set up wifi and time components
-  // Log::logDebug("[Application] Connecting to WiFi network with timeout %d, interval %d, wait %d seconds",
-  //   atoi(this->config("wifi-watchdog-timeout", "30")),
-  //   atoi(this->config("wifi-interval", "30")),
-  //   atoi(this->config("wifi-wait", "2"))
-  // );
-
   Log::logDebug("[Application] Starting setup...");
 
   Components::add(this->_wifi = new WifiComponent(
@@ -254,8 +247,10 @@ void Application::enableConfigEditor(const char *path) {
     if (t == "Save") {
       auto s = server->arg("text");
       writeFile("/config.sys", s.c_str());
+      Log::logWarning("[Application] Configuration updated");
       server->send(200, "text/html", this->makeHtml("/config.sys", "Contents were changed."));
     } else if (t == "Reset") {
+      Log::logWarning("[Application] Reset requested");
       server->send(200, "text/plain", "Reset requested.");
       this->scheduleRestart(3000);
     } else {
