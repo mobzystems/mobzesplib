@@ -34,6 +34,7 @@ class MqttComponent: public Component {
       std::function<void(PubSubClient *)> const onConnected = NULL,
       std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived = NULL,
       unsigned long intervalMs = 30000,
+      uint16_t keepAlive = 0,
       const char *willTopic = NULL,
       const char *willMessage = NULL,
       bool willRetain = true, 

@@ -1,5 +1,6 @@
 #include "MqttApplication.h"
 
+#include "MqttLogComponent.h"
 #include "Logging.h"
 
 MqttApplication::MqttApplication(
@@ -94,8 +95,18 @@ void MqttApplication::setup() {
     }, 
     // Check for lost connection every 5 minutes (default)
     Duration::parse(this->config("mqtt-interval", "5m")) * 1000,
+    // Use keepalive (default 0 = default for PubSubClient = 15s)
+    Duration::parse(this->config("mqtt-keepalive", "0")),
     this->_onlinetopic.c_str(),
     "false"
+  ));
+
+  // Set up an MqttLogger with the specified level (or Warning):
+  this->addComponent(_mqttLog = new MqttLogComponent(
+    this->mqtt(),
+    (this->_mqttPrefix + "/status/" + this->hostname() + "/log").c_str(),
+    atoi(this->config("mqttlog-size", "1000")),
+    Log::parseLogLevel(this->config("mqttlog-level", "Warning"), Log::LOGLEVEL::Warning)
   ));
 
   // Auto-restart task

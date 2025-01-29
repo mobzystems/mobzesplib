@@ -16,6 +16,7 @@ MqttComponent::MqttComponent(
   std::function<void(PubSubClient *)> const onConnected, 
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const onReceived,
   unsigned long intervalMs,
+  uint16_t keepAlive,
   const char *willTopic, 
   const char *willMessage,
   bool willRetain, 
@@ -32,7 +33,12 @@ MqttComponent::MqttComponent(
   _willMessage(willMessage),
   _willRetain(willRetain),
   _willQos(willQos)
-{}
+{
+  if (keepAlive != 0) {
+    Log::logDebug("[%s] Setting keepalive to %d seconds", this->name(), keepAlive);
+    _mqttClient.setKeepAlive(keepAlive);
+  }
+}
 
 /***
  * (re)Connect to the MQTT broker
@@ -66,10 +72,6 @@ void MqttComponent::reconnect()
     else
     {
       Log::logError("[%s] Connection failed, state = %d", this->name(), this->_mqttClient.state());
-      // // RESET WIFI if reconnection failed. Do not do this anymore - it doesn't seem necessary
-      // WiFi.disconnect();
-      // delay(1000);
-      // Log::logDebug("[%s] Wifi disconnected, status is %d", this->name(), WiFi.status());
     }
   }
 }

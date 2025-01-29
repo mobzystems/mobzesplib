@@ -3,6 +3,7 @@
 
 #include "Application.h"
 #include "MqttComponent.h"
+#include "MqttLogComponent.h"
 
 class MqttApplication: public Application {
 private:
@@ -14,6 +15,8 @@ private:
   long _loopCount;
   long _autoRestartTimeout;
   bool _isFirstConnect;
+
+  MqttLogComponent *_mqttLog = NULL;
 
   std::function<void(PubSubClient *client)> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
@@ -32,6 +35,8 @@ public:
   void publishData(const char *channel, const char *property, const char *value, bool retained);
   void publishProperty(const char *property, const char *value, bool retained = false);
 
+  MqttLogComponent *mqttLog() { return this->_mqttLog; }
+  
   // void onMqttConnected(void (*onConnected)()) { this->_onMqttConnected = onConnected; }
   // void onMqttReceived(void (*onReceived)(const char *topic, const byte *payload, unsigned int length)) { this->_onMqttReceived = onReceived; }
 };
