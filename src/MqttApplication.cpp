@@ -248,7 +248,9 @@ void MqttApplication::publishData(const char *channel, const char *property, con
       snprintf(topic, sizeof(topic), "%s/%s/%s/%s", this->_mqttPrefix.c_str(), channel, this->hostname(), property);
 
     Log::logTrace("[MqttApplication] Publishing '%s' = '%s'%s", topic, value, (retained ? " (retained)": ""));
-    _mqtt->mqttClient()->publish(topic, value, retained);
+    if (_mqtt->mqttClient()->publish(topic, value, retained) == false) {
+      Log::logWarning("[MqttApplication] Publish to %s failed", topic);
+    }
   }
 }
 
