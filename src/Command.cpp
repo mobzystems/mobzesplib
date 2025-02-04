@@ -20,7 +20,7 @@ Command::Command(const char *command) {
   delete buffer;
 }
 
-String Command::arg(int i, const char *defaultValue) {
+String Command::arg(size_t i, const char *defaultValue) {
   if (i <= 0)
     return "[Invalid]";
   if (i < this->_arguments.size())
