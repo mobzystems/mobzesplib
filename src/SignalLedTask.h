@@ -1,3 +1,3 @@
 #include "MqttApplication.h"
 
-void addSignalLedTask(MqttApplication *app, uint8_t ledPin, Milliseconds cycleLength, uint maxValue);
+void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxValue);

@@ -8,9 +8,19 @@
  * cycleLength: the length of a single cycle
  * maxValue: number of cycles
  */
-void addSignalLedTask(MqttApplication *app, uint8_t ledPin, Milliseconds cycleLength, uint maxValue)
+void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxValue)
 {
-  pinMode(ledPin, OUTPUT);
+  int ledPin = atoi(app->config("signal-led-pin", "-1"));
+  if (ledPin < 0) {
+    Log::logInformation("[SignalLed] No pin configured");
+    return;
+  }
+
+  bool isInverted = atoi(app->config("signal-led-inverted", "0")) != 0;
+
+  Log::logInformation("[SignalLed] Adding signal LED on pin %d", ledPin);
+  
+  pinMode((uint8_t)ledPin, OUTPUT);
   // _app->addTask("task", 500, []() {
   //   static int count = 0;
   //   bool on;
@@ -28,9 +38,10 @@ void addSignalLedTask(MqttApplication *app, uint8_t ledPin, Milliseconds cycleLe
   //   }
   //   digitalWrite(33, on ? HIGH : LOW);
   // });
+
   // Set up a task with half of the cycle length. The first half of the cycle
   // is signal, the other half is "off". Together they form a "pulse"
-  app->addTask("task", cycleLength / 2, [ledPin, app, maxValue]() {
+  app->addTask("task", cycleLength / 2, [ledPin, app, maxValue, isInverted]() {
     // Max. number of pulses (2 x cycle)
     static uint max = maxValue;
     // "Cycle count". 0..2*max-1
@@ -57,7 +68,11 @@ void addSignalLedTask(MqttApplication *app, uint8_t ledPin, Milliseconds cycleLe
       }
     }
 
-    digitalWrite(ledPin, on ? LOW : HIGH);
+    // If inverted, "on" maps to LOW instead of HIGH
+    if (isInverted)
+      on = !on;
+
+    digitalWrite((uint8_t)ledPin, on ? HIGH : LOW);
 
     // Cycle the pulse
     if (count++ > 2 * max) {
