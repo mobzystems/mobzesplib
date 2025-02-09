@@ -320,6 +320,12 @@ const String &Application::chipModelName() {
 #endif
 }
 
+String Application::formatDuration(const Duration &d) {
+  char buffer[] = "xxxxxd, HH:MM:SS";
+  sprintf(buffer, "%hdd, %02hd:%02hd:%02hd", d.days % 100000, d.hours % 100, d.minutes % 100, d.seconds % 100);
+  return String(buffer);
+}
+
 void Application::enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo) {
   this->mapGet("/info", [this, postProcessInfo](WEBSERVER *server) {
     // if(!_webServer->authenticate("123", "456"))
@@ -329,22 +335,20 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
 
     Duration d(this->upTimeSeconds());
 
-    char upbuffer[] = "xxxxxd, HH:MM:SS";
-    sprintf(upbuffer, "%hdd, %02hd:%02hd:%02hd", d.days % 100000, d.hours % 100, d.minutes % 100, d.seconds % 100);
-
     String initialResponse = 
       String("Hostname: ") + String(this->hostname()) + 
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
       "\r\nIP: " + WiFi.localIP().toString() + 
-      "\r\nClientIP: " + this->wifi()->wifiClient()->localIP().toString() +
+      // This is the IP of the MQTT Wifi client. When disconected, this can be anything :-/
+      // \r\nClientIP: " + this->wifi()->wifiClient()->localIP().toString() +
       "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
       "\r\nBSSID: " +  WiFi.BSSIDstr() +
       "\r\nMAC: " + WiFi.macAddress() +
       "\r\nCPU: " + this->chipModelName() +
       "\r\nBootUTC: " + this->bootTimeUtcString() +
       "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s") + 
-      "\r\nUptime: " + String(upbuffer)
+      "\r\nUptime: " + this->formatDuration(d)
     ;
 
     if (postProcessInfo != NULL)

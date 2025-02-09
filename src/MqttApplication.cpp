@@ -138,7 +138,7 @@ void MqttApplication::setup() {
 
           if (inRestartTimeRange) {
             Log::logInformation("Uptime > %d seconds, restarting...", this->_autoRestartTimeout);
-            this->publishProperty("autorestart", (UTC.dateTime("Y-m-d H:i:s") + " (" + String(uptimeSeconds) + "s)").c_str(), true);
+            this->publishProperty("autorestart", (UTC.dateTime("Y-m-d H:i:s") + " (" + this->formatDuration(Duration(uptimeSeconds)) + "/" + String(uptimeSeconds) + "s)").c_str(), true);
             // Wait a bit
             delay(5000);
             // Perform a clean disconnect from MQTT

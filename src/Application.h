@@ -103,5 +103,8 @@ class Application {
     static const char *configFileName;
     // Schedule a reset after a delay
     void scheduleRestart(unsigned long delayMs);
+
+    // Format a Duration as ....d, hh:mm:ss
+    String formatDuration(const Duration &d);
 };
 #endif
