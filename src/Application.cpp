@@ -249,9 +249,9 @@ void Application::enableConfigEditor(const char *path) {
       writeFile("/config.sys", s.c_str());
       Log::logWarning("[Application] Configuration updated");
       server->send(200, "text/html", this->makeHtml("/config.sys", "Contents were changed."));
-    } else if (t == "Reset") {
-      Log::logWarning("[Application] Reset requested");
-      server->send(200, "text/plain", "Reset requested.");
+    } else if (t == "Reset"|| t == "Restart") {
+      Log::logWarning("[Application] Restart requested");
+      server->send(200, "text/plain", "Restart requested.");
       this->scheduleRestart(3000);
     } else {
       server->send(200, "text/plain", "GOT:" + t);
