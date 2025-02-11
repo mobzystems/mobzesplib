@@ -176,9 +176,13 @@ bool deleteFile(const String &path) {
   return LittleFS.remove(path);
 }
 
-// bool deleteDirectory(const String &path) {
-//   return LittleFS.rmdir(path); // Does remove() internally
-// }
+bool makeDirectory(const String &path) {
+  return LittleFS.mkdir(path);
+}
+
+bool deleteDirectory(const String &path) {
+  return LittleFS.rmdir(path); // Does remove() internally
+}
 
 String Application::HtmlEncode(const char *s) {
   String html(s);
@@ -188,10 +192,33 @@ String Application::HtmlEncode(const char *s) {
 }
 
 String dir(const String &path) {
-  auto dir = LittleFS.openDir(path);
   String output;
   output.reserve(2000);
 
+  #ifdef ESP32
+
+  auto dir = LittleFS.open(path);
+  if (dir.isDirectory()) {
+    File file = dir.openNextFile();
+    while (file) {
+      if (file.isDirectory()) {
+        output.concat('/'); output.concat(file.name());
+        output.concat('\t'); output.concat('0');
+        output.concat('\t'); output.concat(file.getLastWrite());
+      } else {
+        output.concat(file.name());
+        output.concat('\t'); output.concat('0');
+        output.concat('\t'); output.concat(file.getLastWrite());
+        output.concat('\t'); output.concat(file.size());
+      }
+      output.concat('\n');
+      file = dir.openNextFile();
+    }
+  }
+
+  #else
+
+  auto dir = LittleFS.openDir(path);
   while (dir.next()) {
     if (dir.isFile()) {
       output.concat(dir.fileName());
@@ -207,6 +234,8 @@ String dir(const String &path) {
     }
   }
 
+  #endif
+
   return output;
 }
 
@@ -216,7 +245,7 @@ String Application::makeHtml(const char *file, const char *message) {
       : R"###(
 <html>
   <head>
-    <title>#FILE# - Edit</title>
+    <title>#HOSTNAME#: #FILE# - Edit</title>
     <style>
       body { font-family: helvetica, arial, sans-serif; display: grid; grid-template-rows: auto 1fr auto; }
       p { margin: 0; }
@@ -295,7 +324,9 @@ void Application::enableFileEditor(
   const char *writePath, 
   const char *editPath, 
   const char *dirPath,
-  const char *deletePath
+  const char *deletePath,
+  const char *mkdirPath,
+  const char *rmdirPath
 ) {
   if (readPath != NULL) {
     this->mapGet(readPath, [this](WEBSERVER *server) {
@@ -361,6 +392,30 @@ void Application::enableFileEditor(
       if (path.length() == 0)
         server->send(400);
       else if (deleteFile(path))
+        server->send(200, "text/html");
+      else
+        server->send(404); // Literally "File not found"
+    });
+  }
+
+  if (mkdirPath != NULL) {
+    this->mapGet(mkdirPath, [this](WEBSERVER *server) { 
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else if (makeDirectory(path))
+        server->send(200, "text/html");
+      else
+        server->send(404); // Literally "File not found"
+    });
+  }
+
+  if (rmdirPath != NULL) {
+    this->mapGet(rmdirPath, [this](WEBSERVER *server) { 
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else if (deleteDirectory(path))
         server->send(200, "text/html");
       else
         server->send(404); // Literally "File not found"
