@@ -172,11 +172,42 @@ bool writeFile(const char *path, const char *s) {
   return true;
 }
 
+bool deleteFile(const String &path) {
+  return LittleFS.remove(path);
+}
+
+// bool deleteDirectory(const String &path) {
+//   return LittleFS.rmdir(path); // Does remove() internally
+// }
+
 String Application::HtmlEncode(const char *s) {
   String html(s);
   html.replace("<", "&lt;");
   html.replace(">", "&gt;");
   return html;
+}
+
+String dir(const String &path) {
+  auto dir = LittleFS.openDir(path);
+  String output;
+  output.reserve(2000);
+
+  while (dir.next()) {
+    if (dir.isFile()) {
+      output.concat(dir.fileName());
+      output.concat('\t'); output.concat(dir.fileCreationTime());
+      output.concat('\t'); output.concat(dir.fileTime());
+      output.concat('\t'); output.concat(dir.fileSize());
+      output.concat('\n');
+    } else if (dir.isDirectory()) {
+      output.concat('/'); output.concat(dir.fileName());
+      output.concat('\t'); output.concat(dir.fileCreationTime());
+      output.concat('\t'); output.concat(dir.fileTime());
+      output.concat('\n');
+    }
+  }
+
+  return output;
 }
 
 String Application::makeHtml(const char *file, const char *message) {
@@ -259,7 +290,13 @@ void Application::enableConfigEditor(const char *path) {
   });
 }
 
-void Application::enableFileEditor(const char *readPath, const char *writePath, const char *editPath) {
+void Application::enableFileEditor(
+  const char *readPath, 
+  const char *writePath, 
+  const char *editPath, 
+  const char *dirPath,
+  const char *deletePath
+) {
   if (readPath != NULL) {
     this->mapGet(readPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
@@ -296,6 +333,7 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
 
     this->mapPost(editPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
+      // Todo: base64
       auto s = server->arg("text");
       if (path.length() == 0)
         server->send(400);
@@ -304,6 +342,28 @@ void Application::enableFileEditor(const char *readPath, const char *writePath, 
         writeFile(path.c_str(), s.c_str());
         server->send(200, "text/html", this->makeHtml(path.c_str(), "Contents were changed."));
       }
+    });
+  }
+
+  if (dirPath != NULL) {
+    this->mapGet(dirPath, [this](WEBSERVER *server) { 
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else
+        server->send(200, "text/plain", dir(path));
+    });
+  }
+
+  if (deletePath != NULL) {
+    this->mapGet(deletePath, [this](WEBSERVER *server) { 
+      auto path = server->arg("f");
+      if (path.length() == 0)
+        server->send(400);
+      else if (deleteFile(path))
+        server->send(200, "text/html");
+      else
+        server->send(404); // Literally "File not found"
     });
   }
 }
