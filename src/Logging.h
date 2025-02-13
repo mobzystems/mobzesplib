@@ -2,7 +2,7 @@
 #define __LOGGING_H__
 
 #include <Arduino.h>
-#include <eztime.h>
+#include <ezTime.h>
 #include <Print.h>
 #include <vector>
 #include <functional>
