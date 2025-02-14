@@ -16,11 +16,19 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
     return;
   }
 
+  uint32_t rgb = strtol(app->config("signal-led-rgb", "0"), NULL, 16);
+  // Log::logInformation("RGB is %X", rgb);
+  
   bool isInverted = atoi(app->config("signal-led-inverted", "0")) != 0;
 
-  Log::logInformation("[SignalLed] Adding signal LED on pin %d", ledPin);
+  if (rgb)
+    Log::logInformation("[SignalLed] Adding RGB signal LED on pin %d with color %06X", ledPin, rgb);
+  else
+    Log::logInformation("[SignalLed] Adding signal LED on pin %d", ledPin);
   
-  pinMode((uint8_t)ledPin, OUTPUT);
+  if (rgb == 0)
+    pinMode((uint8_t)ledPin, OUTPUT);
+
   // _app->addTask("task", 500, []() {
   //   static int count = 0;
   //   bool on;
@@ -41,7 +49,7 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
 
   // Set up a task with half of the cycle length. The first half of the cycle
   // is signal, the other half is "off". Together they form a "pulse"
-  app->addTask("task", cycleLength / 2, [ledPin, app, maxValue, isInverted]() {
+  app->addTask("task", cycleLength / 2, [ledPin, app, maxValue, rgb, isInverted]() {
     // Max. number of pulses (2 x cycle)
     static uint max = maxValue;
     // "Cycle count". 0..2*max-1
@@ -72,7 +80,16 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
     if (isInverted)
       on = !on;
 
-    digitalWrite((uint8_t)ledPin, on ? HIGH : LOW);
+    if (rgb == 0)
+      digitalWrite((uint8_t)ledPin, on ? HIGH : LOW);
+    else if (!on) {
+      // Log::logInformation("Neopixel off");
+      neopixelWrite((uint8_t)ledPin, 0, 0, 0);
+    } else {
+      // #ff0000 is red, #00ff00 is green, #0000ff is blue
+      // Log::logInformation("Neopixel %d %d %d", (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+      neopixelWrite((uint8_t)ledPin, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+    }
 
     // Cycle the pulse
     if (count++ > 2 * max) {
