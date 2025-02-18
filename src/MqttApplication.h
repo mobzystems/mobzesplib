@@ -5,6 +5,8 @@
 #include "MqttComponent.h"
 #include "MqttLogComponent.h"
 
+#include <WiFiClientSecure.h>
+
 class MqttApplication: public Application {
 private:
   static MqttApplication *_app;
@@ -20,6 +22,8 @@ private:
 
   std::function<void(PubSubClient *client)> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
+
+  WiFiClientSecure _wifiSecure;
 
 public:
   MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80, const char *configuration = NULL);

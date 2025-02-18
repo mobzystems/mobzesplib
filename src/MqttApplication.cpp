@@ -18,7 +18,8 @@ MqttApplication::MqttApplication(
   _autoRestartTimeout(Duration::parse(Application::config("auto-restart-timeout", "0"))),
   _isFirstConnect(true),
   _onMqttConnected(onConnected),
-  _onMqttReceived(onReceived)
+  _onMqttReceived(onReceived),
+  _wifiSecure()
 {
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
 }
@@ -37,9 +38,23 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
 void MqttApplication::setup() {
   Application::setup();
 
+  String mqttCertificate;
+
+  WiFiClient *wifi = this->wifi()->wifiClient();
+
+  const char *certificateFilename = this->config("mqtt-certificate", "");
+  if (certificateFilename && *certificateFilename) {
+    Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
+    mqttCertificate = this->readFile(certificateFilename);
+    this->_wifiSecure.setCACert(mqttCertificate.c_str());
+    wifi = &this->_wifiSecure;
+    // Serial.println(mqttCertificate);
+    // Log::logDebug("[MqttApplication] Certificate is '%s'", mqttCertificate.c_str());
+  }
+
   // MQTT
   this->addComponent(_mqtt = new MqttComponent(
-    this->wifi()->wifiClient(),
+    wifi,
     this->config("mqtt-server"), atoi(this->config("mqtt-port")),
     this->config("mqtt-username"), this->config("mqtt-password"),
     this->hostname(),
@@ -98,7 +113,8 @@ void MqttApplication::setup() {
     // Use keepalive (default 0 = default for PubSubClient = 15s)
     Duration::parse(this->config("mqtt-keepalive", "0")),
     this->_onlinetopic.c_str(),
-    "false"
+    "false",
+    mqttCertificate.c_str()
   ));
 
   // Set up an MqttLogger with the specified level (or Warning):

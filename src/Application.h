@@ -48,6 +48,8 @@ class Application {
 
     static Application *_app;
 
+    String readFile(const char *path);
+    
   public:
     // Constructor
     Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, const char *configuration = NULL);

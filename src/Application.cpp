@@ -153,7 +153,7 @@ void Application::mapPost(const char *path, std::function<void(WEBSERVER *)> con
   this->webserver()->on(path, HTTP_POST, [this, handler]() { handler(this->webserver()); });
 }
 
-String readFile(const char *path) {
+String Application::readFile(const char *path) {
   auto f = LittleFS.open(path, "r");
   if (!f)
     return String(""); // TODO: this is not an empty file...
@@ -241,7 +241,7 @@ String dir(const String &path) {
 
 String Application::makeHtml(const char *file, const char *message) {
     String html = LittleFS.exists("/wwwroot/edit-file.html")
-      ? readFile("/wwwroot/edit-file.html")
+      ? this->readFile("/wwwroot/edit-file.html")
       : R"###(
 <html>
   <head>
@@ -291,7 +291,7 @@ String Application::makeHtml(const char *file, const char *message) {
     html.replace("#APPTITLE#", appTitle);
 
     // Do this one LAST otherwise it will also replace in s!
-    String s = readFile(file);
+    String s = this->readFile(file);
     html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
 
     return html;
@@ -334,7 +334,7 @@ void Application::enableFileEditor(
       if (path.length() == 0)
         server->send(400);
       else if (LittleFS.exists(path))
-        server->send(200, "text/plain", readFile(path.c_str()));
+        server->send(200, "text/plain", this->readFile(path.c_str()));
       else
         server->send(404, "text/plain", "File not found: " + path);
     });
