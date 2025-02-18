@@ -17,13 +17,17 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
   }
 
   uint32_t rgb = strtol(app->config("signal-led-rgb", "0"), NULL, 16);
-  // Log::logInformation("RGB is %X", rgb);
   
   bool isInverted = atoi(app->config("signal-led-inverted", "0")) != 0;
 
-  if (rgb)
+  if (rgb) {
+#ifdef ESP8266
+    Log::logError("[SignalLed] RGB LED not supported on ESP8266");
+    return;
+#else
     Log::logInformation("[SignalLed] Adding RGB signal LED on pin %d with color %06X", ledPin, rgb);
-  else
+#endif
+  } else
     Log::logInformation("[SignalLed] Adding signal LED on pin %d", ledPin);
   
   if (rgb == 0)
@@ -82,6 +86,8 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
 
     if (rgb == 0)
       digitalWrite((uint8_t)ledPin, on ? HIGH : LOW);
+#ifdef ESP8266
+#else
     else if (!on) {
       // Log::logInformation("Neopixel off");
       neopixelWrite((uint8_t)ledPin, 0, 0, 0);
@@ -90,6 +96,7 @@ void addSignalLedTask(MqttApplication *app, Milliseconds cycleLength, uint maxVa
       // Log::logInformation("Neopixel %d %d %d", (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
       neopixelWrite((uint8_t)ledPin, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
     }
+#endif
 
     // Cycle the pulse
     if (count++ > 2 * max) {
