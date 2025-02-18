@@ -18,8 +18,10 @@ MqttApplication::MqttApplication(
   _autoRestartTimeout(Duration::parse(Application::config("auto-restart-timeout", "0"))),
   _isFirstConnect(true),
   _onMqttConnected(onConnected),
-  _onMqttReceived(onReceived),
-  _wifiSecure()
+  _onMqttReceived(onReceived)
+  #ifndef ESP8266
+  , _wifiSecure()
+  #endif
 {
   Log::logDebug("[MqttApplication] Creating application '%s' v%s on '%s'", this->title().c_str(), this->version().c_str(), this->hostname(), this->_onlinetopic.c_str());
 }
@@ -38,9 +40,10 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
 void MqttApplication::setup() {
   Application::setup();
 
-  String mqttCertificate;
   WiFiClient *wifi = this->wifi()->wifiClient();
 
+#ifndef ESP8266
+  String mqttCertificate;
   const char *certificateFilename = this->config("mqtt-certificate", "");
   if (certificateFilename && *certificateFilename) {
     Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
@@ -56,6 +59,7 @@ void MqttApplication::setup() {
     // Serial.println(mqttCertificate);
     // Log::logDebug("[MqttApplication] Certificate is '%s'", mqttCertificate.c_str());
   }
+#endif
 
   // MQTT
   this->addComponent(_mqtt = new MqttComponent(
@@ -118,9 +122,11 @@ void MqttApplication::setup() {
     // Use keepalive (default 0 = default for PubSubClient = 15s)
     Duration::parse(this->config("mqtt-keepalive", "0")),
     this->_onlinetopic.c_str(),
-    "false",
-    mqttCertificate.c_str()
-  ));
+    "false"
+  #ifndef ESP8266
+  , mqttCertificate.c_str()
+  #endif
+));
 
   // Set up an MqttLogger with the specified level (or Warning):
   this->addComponent(_mqttLog = new MqttLogComponent(

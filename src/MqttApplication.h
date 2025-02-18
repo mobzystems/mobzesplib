@@ -23,7 +23,9 @@ private:
   std::function<void(PubSubClient *client)> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
 
+#ifndef ESP8266
   WiFiClientSecure _wifiSecure;
+#endif
 
 public:
   MqttApplication(const char *title, const char *version, const char *mqttPrefix, uint16_t otaPortNumber = 80, const char *configuration = NULL);
