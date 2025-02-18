@@ -46,7 +46,13 @@ void MqttApplication::setup() {
   if (certificateFilename && *certificateFilename) {
     Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
     mqttCertificate = this->readFile(certificateFilename);
+#ifdef ESP8266
+    BearSSL::X509List serverTrustedCA(mqttCertificate.c_str());
+    this->_wifiSecure.setTrustAnchors(&serverTrustedCA);
+#else
     this->_wifiSecure.setCACert(mqttCertificate.c_str());
+#endif
+
     wifi = &this->_wifiSecure;
     // Serial.println(mqttCertificate);
     // Log::logDebug("[MqttApplication] Certificate is '%s'", mqttCertificate.c_str());
