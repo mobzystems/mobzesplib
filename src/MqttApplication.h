@@ -41,6 +41,8 @@ public:
 
   MqttLogComponent *mqttLog() { return this->_mqttLog; }
   
+  // WiFiClientSecure *client() { return &this->_wifiSecure; }
+
   // void onMqttConnected(void (*onConnected)()) { this->_onMqttConnected = onConnected; }
   // void onMqttReceived(void (*onReceived)(const char *topic, const byte *payload, unsigned int length)) { this->_onMqttReceived = onReceived; }
 };

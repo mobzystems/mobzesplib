@@ -39,7 +39,6 @@ void MqttApplication::setup() {
   Application::setup();
 
   String mqttCertificate;
-
   WiFiClient *wifi = this->wifi()->wifiClient();
 
   const char *certificateFilename = this->config("mqtt-certificate", "");
@@ -47,7 +46,7 @@ void MqttApplication::setup() {
     Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
     mqttCertificate = this->readFile(certificateFilename);
 #ifdef ESP8266
-    BearSSL::X509List serverTrustedCA(mqttCertificate.c_str());
+    BearSSL::X509List serverTrustedCA(mqttCertificate.c_str()); 
     this->_wifiSecure.setTrustAnchors(&serverTrustedCA);
 #else
     this->_wifiSecure.setCACert(mqttCertificate.c_str());
