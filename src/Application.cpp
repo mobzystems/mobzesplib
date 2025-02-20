@@ -463,7 +463,7 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
       "\r\nIP: " + WiFi.localIP().toString() + 
-      "\r\nAP: " + WiFi.softAPIP().toString() +
+      ((WiFi.getMode() & WIFI_AP) ? "\r\nAP: " + WiFi.softAPIP().toString() : "") +
       // This is the IP of the MQTT Wifi client. When disconected, this can be anything :-/
       // \r\nClientIP: " + this->wifi()->wifiClient()->localIP().toString() +
       "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
