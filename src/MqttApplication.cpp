@@ -50,8 +50,8 @@ void MqttApplication::setup() {
   */
 #ifndef ESP8266
   String mqttCertificate;
-  const char *certificateFilename = this->config("mqtt-certificate", "");
-  if (certificateFilename && *certificateFilename) {
+  const char *certificateFilename = this->config("mqtt-certificate");
+  if (*certificateFilename) {
     Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
     mqttCertificate = this->readFile(certificateFilename);
 #ifdef ESP8266

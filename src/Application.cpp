@@ -62,7 +62,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
  */
 const char *Application::config(const char *key, const char *defaultValue) {
   // Read the "common value", i.e. without the mac address
-  const char *commonValue = this->_configuration->value(key, defaultValue == NULL ? (String("[Missing ") + key + "]").c_str() : defaultValue);
+  const char *commonValue = this->_configuration->value(key, defaultValue == NULL ? emptyString.c_str() : defaultValue);
   return this->_configuration->value((key + String("-") + this->_macAddress).c_str(), commonValue);
 }
 
@@ -72,14 +72,18 @@ const char *Application::config(const char *key, const char *defaultValue) {
 void Application::setup() {
   Log::logDebug("[Application] Starting setup...");
 
-  String ap_ssid(this->config("wifi-ap-ssid", ""));
+  // Station SSID
+  String ssid(this->config("wifi-ssid"));
+
+  // Soft AP SSID
+  String ap_ssid(this->config("wifi-ap-ssid"));
   if (!ap_ssid.isEmpty())
     ap_ssid.replace("#HOSTNAME#", this->hostname());
 
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
     // STA: Connect to this SSID
-    this->config("wifi-ssid"), this->config("wifi-password"), 
+    ssid.c_str(), this->config("wifi-password"), 
     Duration::parse(this->config("wifi-watchdog-timeout", "30")),
     Duration::parse(this->config("wifi-interval", "30")) * 1000,
     Duration::parse(this->config("wifi-wait", "20")) * 1000,
@@ -88,18 +92,22 @@ void Application::setup() {
     atoi(this->config("wifi-ap-permanent", "0")) != 0 // Permanent soft AP
   ));
 
-  // Set up the time component with a default timeout
-  Components::add(this->_time = new TimeComponent(
-    this->config("timezone", "Europe/Amsterdam"),
-    Duration::parse(this->config("time-timeout", "5"))
-  ));
+  if (ssid.isEmpty()) {
+    Log::logWarning("[Application] Skipping time component because no SSID configured");
+  } else {
+    // Set up the time component with a default timeout
+    Components::add(this->_time = new TimeComponent(
+      this->config("timezone", "Europe/Amsterdam"),
+      Duration::parse(this->config("time-timeout", "5"))
+    ));
+  }
 
   // OTA:
   Components::add(this->_ota = new OtaComponent(this->_otaPortNumber));
 
-  const char *otaUsername = this->config("ota-username", NULL);
-  const char *otaPassword = this->config("ota-password", NULL);
-  if (otaUsername != NULL && otaPassword != NULL)
+  const char *otaUsername = this->config("ota-username");
+  const char *otaPassword = this->config("ota-password");
+  if (*otaUsername && *otaPassword)
     ElegantOTA.setAuth(otaUsername, otaPassword);
 
   this->webserver()->enableCORS(true);
