@@ -96,8 +96,8 @@ class Application {
     void mapGet(const char *path, std::function<void(WEBSERVER *)> const handler);
     void mapPost(const char *path, std::function<void(WEBSERVER *)> const handler);
 
-    void enableConfigEditor(const char *path = "/config");
-    void enableFileEditor(const char *readPath, const char *writePath, const char *editPath, const char *dirPath, const char *deletePath, const char *mkdirPath, const char *rmdirPath);
+    void enableConfigEditor(const char *path = "/config.sys");
+    void enableFileEditor(const char *readPath = "/read", const char *writePath = "/write", const char *editPath = "/edit", const char *dirPath = "/dir", const char *deletePath = "/delete", const char *mkdirPath = "/mkdir", const char *rmdirPath = "/rmdir");
 
     void enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo = NULL);
 
