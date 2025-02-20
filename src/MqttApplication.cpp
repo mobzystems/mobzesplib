@@ -34,7 +34,7 @@ MqttApplication::MqttApplication(const char *title, const char *version, const c
 /*
  Set up the application. Calls the base class' setup(), then configures:
 
- - An MQTT component
+ - An MQTT component and logger
  - Tasks for auto-reset, report IP, ping and memory/loop status
 */
 void MqttApplication::setup() {
@@ -42,6 +42,12 @@ void MqttApplication::setup() {
 
   WiFiClient *wifi = this->wifi()->wifiClient();
 
+  /*
+    This part contains support for MQTT over SSL/TLS. *This does not work well on ESP8266*
+    because it requires a lot of memory and CPU. Therefore we DON'T support it on ESP8266.
+
+    TODO: Make this a build flag for ESP32 to save program memory
+  */
 #ifndef ESP8266
   String mqttCertificate;
   const char *certificateFilename = this->config("mqtt-certificate", "");
@@ -61,7 +67,7 @@ void MqttApplication::setup() {
   }
 #endif
 
-  // MQTT
+  // MQTT component
   this->addComponent(_mqtt = new MqttComponent(
     wifi,
     this->config("mqtt-server"), atoi(this->config("mqtt-port")),
@@ -136,7 +142,7 @@ void MqttApplication::setup() {
     Log::parseLogLevel(this->config("mqttlog-level", "Warning"), Log::LOGLEVEL::Warning)
   ));
 
-  // Auto-restart task
+  // Auto-restart task (15m)
   if (this->_autoRestartTimeout > 0) {
     // Check every 15 minutes for an auto-restart
     this->addTask("Check auto-restart", Duration::parse(this->config("auto-restart-interval", "15m")) * 1000, [this]()
@@ -180,7 +186,7 @@ void MqttApplication::setup() {
     });
   }
 
-  // IP task: 10 minutes (600s)
+  // Publish IP (10 minutes)
   int ipInterval = Duration::parse(this->config("ip-interval", "10m"));
   if (ipInterval > 0) {
     this->addTask("Publish IP", ipInterval * 1000, [this]() {
@@ -190,6 +196,7 @@ void MqttApplication::setup() {
     });
   }
 
+  // Publish RSSI and BSSID (1 minute)
   int rssiInterval = Duration::parse(this->config("rssi-interval", "1m"));
   if (rssiInterval > 0) {
     this->addTask("Publish RSSI", rssiInterval * 1000, [this]() {
@@ -203,9 +210,9 @@ void MqttApplication::setup() {
     });
   }
 
-  // Ping task: 15 minutes (900)
-  int pingInterval = Duration::parse(this->config("ping-interval", "15m"));
-  if (pingInterval > 0) {
+    // Ping task (15 minutes)
+    int pingInterval = Duration::parse(this->config("ping-interval", "15m"));
+    if (pingInterval > 0) {
     this->addTask("Ping", pingInterval * 1000, [this]() {
       if (this->bootTimeUtc() != 0) {
         auto wifiAddress = WiFi.localIP().toString();
@@ -217,7 +224,7 @@ void MqttApplication::setup() {
     });
   }
 
-  // Free memory/loop count task
+  // Publish free memory and loop count (1m)
   auto memoryInterval = Duration::parse(this->config("memory-interval", "1m"));
   if (memoryInterval > 0) {
     this->addTask("Show memory/loop status", memoryInterval * 1000, [this]()
@@ -242,7 +249,7 @@ void MqttApplication::setup() {
     });
   }
 
-  // Publish our application name and version
+  // Publish our application name and version *retained*
   this->publishProperty("application", this->title().c_str(), true);
   this->publishProperty("version", this->version().c_str(), true);
 
