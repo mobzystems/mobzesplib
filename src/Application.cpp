@@ -78,7 +78,7 @@ void Application::setup() {
   // Soft AP SSID
   String ap_ssid(this->config("wifi-ap-ssid"));
   if (!ap_ssid.isEmpty())
-    ap_ssid.replace("#HOSTNAME#", this->hostname());
+    ap_ssid.replace(F("#HOSTNAME#"), this->hostname());
 
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
@@ -170,9 +170,14 @@ void Application::mapPost(const char *path, std::function<void(WEBSERVER *)> con
 }
 
 String Application::readFile(const char *path) {
+  if (!LittleFS.exists(path)) {
+    Log::logWarning("[Application] File '%s' does not exist, returning ''");
+    return emptyString;
+  }
+
   auto f = LittleFS.open(path, "r");
   if (!f)
-    return String(""); // TODO: this is not an empty file...
+    return emptyString; // TODO: this is not an empty file...
     
   auto s = f.readString();
   f.close();
@@ -202,8 +207,8 @@ bool deleteDirectory(const String &path) {
 
 String Application::HtmlEncode(const char *s) {
   String html(s);
-  html.replace("<", "&lt;");
-  html.replace(">", "&gt;");
+  html.replace(F("<"), F("&lt;"));
+  html.replace(F(">"), F("&gt;"));
   return html;
 }
 
@@ -256,81 +261,87 @@ String dir(const String &path) {
 }
 
 String Application::makeHtml(const char *file, const char *message) {
-    String html = LittleFS.exists("/wwwroot/edit-file.html")
+    String html = LittleFS.exists(F("/wwwroot/edit-file.html"))
       ? this->readFile("/wwwroot/edit-file.html")
-      : R"###(
+      : F(R"###(
 <html>
   <head>
     <title>#HOSTNAME#: #FILE# - Edit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" mask="#fff" />
     <style>
-      body { font-family: helvetica, arial, sans-serif; display: grid; grid-template-rows: auto 1fr auto; }
-      p { margin: 0; }
-      textarea { width: 100%; height: 100%; text-wrap: nowrap; }
-      #topform { display: grid; grid-template-rows: 1fr auto; gap: 0.5rem; margin: 0; }
+      html { margin: 0; padding: 0; }
+      body { font-family: helvetica, arial, sans-serif; margin: 0; padding: 0; height: 100%; }
+      form { display: grid; grid-template-rows: auto 1fr auto auto; height: 100%; }
+      div { margin: 0.25rem 0.5rem; }
+
+      h1, h2, h3 { margin: 0.25rem 0; }
+      #parent { position: relative; }
+      textarea { position: absolute; top: 0; right: 0; bottom: 0; left: 0; text-wrap: nowrap; }
       .message { color: red; }
     </style>
   </head>
   <body>
-    <div>
-      <h1>File <em>#FILE#</em></h1>
-      <h2>on <em>#HOSTNAME# (#MACADDRESS#)</em></h2>
-    </div>
-    <form method="POST" id="topform">
-      <p>
+    <form method="POST">
+      <div>
+        <h2>File <em>#FILE#</em></h1>
+        <h3>on <em>#HOSTNAME# (#MACADDRESS#)</em></h2>
+      </div>
+      <div id="parent">
         <textarea name="text">#TEXT#</textarea>
-      </p>
-      <p>
+      </div>
+      <div>
         <input type="submit" name="submit" value="Save" />
         <span class="message">#MESSAGE#</span>
-      </p>
-      <p>
-        <input type="submit" name="submit" value="Reset" />
+      </div>
+      <div>
+        <input type="submit" name="submit" value="Restart" />
         #APPTITLE#
-      </p>
+      </div>
     </form>
   </body>
 </html>
-)###";
+)###");
 
     if (message == NULL)
-      html.replace("#MESSAGE#", "");
+      html.replace(F("#MESSAGE#"), emptyString);
     else
-      html.replace("#MESSAGE#", this->HtmlEncode(message).c_str());
+      html.replace(F("#MESSAGE#"), this->HtmlEncode(message).c_str());
 
-    html.replace("#FILE#", this->HtmlEncode(file));
-    html.replace("#HOSTNAME#", this->HtmlEncode(this->hostname()));
-    html.replace("#MACADDRESS#", this->HtmlEncode(this->_macAddress.c_str()));
+    html.replace(F("#FILE#"), this->HtmlEncode(file));
+    html.replace(F("#HOSTNAME#"), this->HtmlEncode(this->hostname()));
+    html.replace(F("#MACADDRESS#"), this->HtmlEncode(this->_macAddress.c_str()));
 
     String appTitle = this->_title;
     if (!this->_version.isEmpty())
       appTitle += " v" + this->_version;
-    html.replace("#APPTITLE#", appTitle);
+    html.replace(F("#APPTITLE#"), appTitle);
 
     // Do this one LAST otherwise it will also replace in s!
     String s = this->readFile(file);
-    html.replace("#TEXT#", this->HtmlEncode(s.c_str()));
+    html.replace(F("#TEXT#"), this->HtmlEncode(s.c_str()));
 
     return html;
 }
 
 void Application::enableConfigEditor(const char *path) {
   this->mapGet(path, [this](WEBSERVER *server) {
-    server->send(200, "text/html", this->makeHtml("/config.sys", NULL));
+    server->send(200, F("text/html"), this->makeHtml(this->configFileName, NULL));
   });
 
   this->mapPost(path, [this](WEBSERVER *server) {
-    auto t = server->arg("submit");
+    auto t = server->arg(F("submit"));
     if (t == "Save") {
       auto s = server->arg("text");
-      writeFile("/config.sys", s.c_str());
+      writeFile(this->configFileName, s.c_str());
       Log::logWarning("[Application] Configuration updated");
-      server->send(200, "text/html", this->makeHtml("/config.sys", "Contents were changed."));
+      server->send(200, F("text/html"), this->makeHtml(this->configFileName, "Contents were changed."));
     } else if (t == "Reset"|| t == "Restart") {
       Log::logWarning("[Application] Restart requested");
-      server->send(200, "text/plain", "Restart requested.");
+      server->send(200, F("text/plain"), F("Restart requested."));
       this->scheduleRestart(3000);
     } else {
-      server->send(200, "text/plain", "GOT:" + t);
+      server->send(200, F("text/plain"), "GOT: " + t);
     }
   });
 }
@@ -350,9 +361,9 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else if (LittleFS.exists(path))
-        server->send(200, "text/plain", this->readFile(path.c_str()));
+        server->send(200, F("text/plain"), this->readFile(path.c_str()));
       else
-        server->send(404, "text/plain", "File not found: " + path);
+        server->send(404, F("text/plain"), "File not found: " + path);
     });
   }
 
@@ -362,7 +373,7 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else {
-        auto s = server->arg("text");
+        auto s = server->arg(F("text"));
         writeFile(path.c_str(), s.c_str());
         server->send(200);
       }
@@ -375,19 +386,19 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else
-        server->send(200, "text/html", this->makeHtml(path.c_str(), NULL));
+        server->send(200, F("text/html"), this->makeHtml(path.c_str(), NULL));
     });
 
     this->mapPost(editPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
       // Todo: base64
-      auto s = server->arg("text");
+      auto s = server->arg(F("text"));
       if (path.isEmpty())
         server->send(400);
       else {
-        auto s = server->arg("text");
+        auto s = server->arg(F("text"));
         writeFile(path.c_str(), s.c_str());
-        server->send(200, "text/html", this->makeHtml(path.c_str(), "Contents were changed."));
+        server->send(200, F("text/html"), this->makeHtml(path.c_str(), "Contents were changed."));
       }
     });
   }
@@ -398,7 +409,7 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else
-        server->send(200, "text/plain", dir(path));
+        server->send(200, F("text/plain"), dir(path));
     });
   }
 
@@ -408,7 +419,7 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else if (deleteFile(path))
-        server->send(200, "text/html");
+        server->send(200);
       else
         server->send(404); // Literally "File not found"
     });
@@ -420,7 +431,7 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else if (makeDirectory(path))
-        server->send(200, "text/html");
+        server->send(200);
       else
         server->send(404); // Literally "File not found"
     });
@@ -432,7 +443,7 @@ void Application::enableFileEditor(
       if (path.isEmpty())
         server->send(400);
       else if (deleteDirectory(path))
-        server->send(200, "text/html");
+        server->send(200);
       else
         server->send(404); // Literally "File not found"
     });
@@ -467,26 +478,26 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
     Duration d(this->upTimeSeconds());
 
     String initialResponse = 
-      String("Hostname: ") + String(this->hostname()) + 
-      "\r\nApplication: " + this->title() + 
-      "\r\nVersion: " + this->version() + 
-      "\r\nIP: " + WiFi.localIP().toString() + 
+      String(F("Hostname: ")) + String(this->hostname()) + 
+      F("\r\nApplication: ") + this->title() + 
+      F("\r\nVersion: ") + this->version() + 
+      F("\r\nIP: ") + WiFi.localIP().toString() + 
       ((WiFi.getMode() & WIFI_AP) ? "\r\nAP: " + WiFi.softAPIP().toString() : "") +
       // This is the IP of the MQTT Wifi client. When disconected, this can be anything :-/
       // \r\nClientIP: " + this->wifi()->wifiClient()->localIP().toString() +
-      "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
-      "\r\nBSSID: " +  WiFi.BSSIDstr() +
-      "\r\nMAC: " + WiFi.macAddress() +
-      "\r\nCPU: " + this->chipModelName() +
-      "\r\nBootUTC: " + this->bootTimeUtcString() +
-      "\r\nUTC: " + UTC.dateTime("Y-m-d H:i:s") + 
-      "\r\nUptime: " + this->formatDuration(d)
+      F("\r\nRSSI: ") + String(WiFi.RSSI()) + F(" dBm") +
+      F("\r\nBSSID: ") +  WiFi.BSSIDstr() +
+      F("\r\nMAC: ") + WiFi.macAddress() +
+      F("\r\nCPU: ") + this->chipModelName() +
+      F("\r\nBootUTC: ") + this->bootTimeUtcString() +
+      F("\r\nUTC: ") + UTC.dateTime("Y-m-d H:i:s") + 
+      F("\r\nUptime: ") + this->formatDuration(d)
     ;
 
     if (postProcessInfo != NULL)
       postProcessInfo(initialResponse);
 
-    server->send(200, "text/plain", initialResponse.c_str());
+    server->send(200, F("text/plain"), initialResponse.c_str());
   });  
 }
 
@@ -495,7 +506,7 @@ void Application::addOledDisplay(int sda, int scl, uint8_t address) {
   auto display = _oled->getDisplay();
   // _display->setRotation(2); // 180
   display->setTextSize(1, 2);
-  display->println("Starting");
+  display->println(F("Starting"));
   display->print(this->hostname());
   display->display();
 }
