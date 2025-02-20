@@ -77,7 +77,8 @@ void Application::setup() {
     this->config("wifi-ssid"), this->config("wifi-password"), 
     Duration::parse(this->config("wifi-watchdog-timeout", "30")),
     Duration::parse(this->config("wifi-interval", "30")) * 1000,
-    Duration::parse(this->config("wifi-wait", "20")) * 1000
+    Duration::parse(this->config("wifi-wait", "20")) * 1000,
+    this->config("wifi-ap-ssid"), this->config("wifi-ap-password"), true // Fallback only soft AP
   ));
 
   // Set up the time component with a default timeout

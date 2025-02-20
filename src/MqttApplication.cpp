@@ -124,9 +124,9 @@ void MqttApplication::setup() {
     this->_onlinetopic.c_str(),
     "false"
   #ifndef ESP8266
-  , mqttCertificate.c_str()
+    , mqttCertificate.c_str()
   #endif
-));
+  ));
 
   // Set up an MqttLogger with the specified level (or Warning):
   this->addComponent(_mqttLog = new MqttLogComponent(

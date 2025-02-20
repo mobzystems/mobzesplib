@@ -21,8 +21,21 @@ class WifiComponent: public Component {
 
     uint16_t _watchdogTimeoutSeconds;
 
+    String _ap_ssid;
+    String _ap_password;
+    bool _fallbackOnly;
+
+    bool setupSoftAP();
+    
   public:
-    WifiComponent(const char *hostname, const char *ssid, const char *password, int watchdogTimeoutSeconds, unsigned long checkInterval = 30000, uint32_t waitTime = 2000);
+    WifiComponent(
+      const char *hostname, 
+      const char *ssid, const char *password,
+      int watchdogTimeoutSeconds, 
+      unsigned long checkInterval = 30000, uint32_t waitTime = 2000,
+      const char *ap_ssid = NULL, const char *ap_password = NULL, // SSID/Password of a Soft-AP. Only active if ssid supplied, password is optional
+      bool fallbackOnly = true // If true, the soft-AP is only used when no connection is posssible with the "normal" ssid (or none is present)
+    );
 
     WiFiClient *wifiClient() { return &this->_wifiClient; }
 

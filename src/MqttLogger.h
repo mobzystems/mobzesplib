@@ -1,3 +1,6 @@
+#ifndef __MQTT_LOGGER_H__
+#define __MQTT_LOGGER_H__
+
 #include <Arduino.h>
 #include "Logging.h"
 #include "MqttComponent.h"
@@ -21,3 +24,4 @@ public:
   MqttLogger(MqttComponent *mqtt, const char *topic, int max_size, Log::LOGLEVEL minLevel = Log::LOGLEVEL::None);
   void loop();
 };
+#endif

@@ -5,6 +5,12 @@
 
 WiFiClient WifiComponent::_wifiClient;
 
+// Helper function to restart after a delay
+void Restart() {
+  delay(2000);
+  ESP.restart();
+}
+
 // Create a new WiFiComponent with host name and wifi credentials, plus an optional connection check
 WifiComponent::WifiComponent(
   // The host name to use
@@ -17,7 +23,12 @@ WifiComponent::WifiComponent(
   // The interval in ms to check the connection
   unsigned long checkInterval,
   // The wait time during a reconnect
-  uint32_t waitTime
+  uint32_t waitTime,
+  // SSID/Password of a Soft-AP. Only active if ssid supplied, password is optional
+  const char *ap_ssid, 
+  const char *ap_password,
+  // If true, the soft-AP is only used when no connection is posssible with the "normal" ssid (or none is present)
+  bool fallbackOnly
 ) :
   Component("Wifi"),
   _hostname(hostname),
@@ -26,11 +37,50 @@ WifiComponent::WifiComponent(
   _intervalMs(checkInterval),
   _waitMs(waitTime),
   _lastCheckTime(0),
-  _watchdogTimeoutSeconds(watchdogTimeoutSeconds)
+  _watchdogTimeoutSeconds(watchdogTimeoutSeconds),
+  _ap_ssid(ap_ssid),
+  _ap_password(ap_password),
+  _fallbackOnly(fallbackOnly)
 {
 }
 
-// Try to connect to the WiFi network. Does not return until a connection is made!
+/**
+ * Set up a soft AP. Return true if successful
+ */
+bool WifiComponent::setupSoftAP() {
+  if (this->_ap_ssid.length() == 0) {
+    Log::logCritical("[%s] Cannot set up soft AP: no SSID configured", this->name());
+    return false;
+  }
+
+  Log::logInformation("[%s] Setting up soft AP with SSID '%s' and password '%s'", this->name(), this->_ap_ssid, this->_ap_password);
+
+  // Switch to AP mode or even AP+STA
+  if (this->_fallbackOnly)
+    // Fallback only: AP only
+    WiFi.mode(WIFI_AP);
+  else
+    // Else (i.e. permanent): both AP and STA
+    WiFi.mode(WIFI_AP_STA);
+
+  // Set up the AP
+  bool result = WiFi.softAP(this->_ap_ssid, this->_ap_password);
+  
+  if (!result)
+    Log::logCritical("[%s] Setting up soft AP with SSID '%s' failed!", this->name(), this->_ap_ssid);
+  else
+    Log::logInformation("[%s] Soft AP set up at %s.", this->name(), WiFi.softAPIP().toString().c_str());
+
+  return result;
+}
+
+/**
+ * Try to connect to the WiFi network. Scans for the strongest BSSID. If none is found,
+ * a soft AP is set up if configured. If not, the ESP is restarted.
+ * 
+ * If a suitable BSSID is found, a connection is attempted. If a watchdog timeout was
+ * specified and it expires, a soft AP is set up if configured, else the ESPS is restarted.
+ */
 void WifiComponent::setup()
 {
   // --- Configure WIFI ---
@@ -47,44 +97,94 @@ void WifiComponent::setup()
   // This causes "IP unset" on ESP8266!
   WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 #endif
-  WiFi.mode(WIFI_STA);
 
-  this->connectToStrongest();
-
-  Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",
-    name(),
-    this->_ssid.c_str(),
-    this->_watchdogTimeoutSeconds,
-    this->_intervalMs / 1000,
-    this->_waitMs / 1000
-  );
-  setStatus(1000, Log::LOGLEVEL::Information, "Connecting");
-  unsigned long ms = millis();
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    if (this->_watchdogTimeoutSeconds != 0 && millis() > ms + this->_watchdogTimeoutSeconds * 1000) {
-      Serial.println();
-      setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
-      Log::logCritical("[%s] No connection after %d seconds, restarting...", name(), this->_watchdogTimeoutSeconds);
-      delay(2000);
-      // Restart the server
-      ESP.restart();
-    }
-    Log::logTrace("[%s] Still connecting...", name());
-    Serial.print(".");
-    setStatus(1000, Log::LOGLEVEL::Trace, ("Connecting " + String(1 + (millis() - ms) / 1000) /* + "/" + String(this->_watchdogTimeoutSeconds) */).c_str());
-    delay(500);
+  // Handle soft AP setup when _fallbackOnly == false, i.e. always
+  if (this->_ap_ssid.length() != 0 && this->_fallbackOnly == false) {
+    // We have a PERMANENT soft AP configured
+    // WiFi.mode(WIFI_AP_STA);
+    this->setupSoftAP();
+  } else {
+    // Station only, no AP
+    WiFi.mode(WIFI_STA);
   }
 
-  Serial.println();
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    setStatus(2000, Log::LOGLEVEL::Information, "Connected");
-    Log::logInformation("[%s] Connected '%s' to '%s' (%s) at %s (MAC %s)", name(), WiFi.getHostname(), WiFi.SSID().c_str(), WiFi.BSSIDstr().c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
+  String bssid = this->connectToStrongest();
+
+  if (bssid.length() == 0) {
+
+    // We were not able to find a network. See if we need to set up a soft access point
+    if (this->_ap_ssid.length() != 0) {
+      // We have an AP SSID. Set it up:
+      Log::logWarning("[%s] No networks '%s' found, setting up soft AP...", this->name(), this->_ssid.c_str());
+      if (!this->setupSoftAP()) {
+        // Soft AP set up failed! Restart the ESP
+        Log::logCritical("[%s] No networks '%s' found, soft AP failed: giving up...", this->name(), this->_ssid.c_str());
+        Restart();
+      }
+    } else {
+      // We have no soft AP configured. Restart the ESP
+      Log::logCritical("[%s] No networks '%s' found, no soft AP configured: giving up...", this->name(), this->_ssid.c_str());
+      Restart();
+    }
+
   } else {
-    setStatus(9000, Log::LOGLEVEL::Error, "NOT connected");
-    Log::logCritical("[%s] Cannot connect to WiFi", name());
+
+    // We found a suitable BSSID. try connecting to it:
+    Log::logDebug("[%s] Connecting to WiFi network '%s' with timeout %d, interval %d, wait %d seconds...",
+      this->name(),
+      this->_ssid.c_str(),
+      this->_watchdogTimeoutSeconds,
+      this->_intervalMs / 1000,
+      this->_waitMs / 1000
+    );
+    setStatus(1000, Log::LOGLEVEL::Information, "Connecting");
+    unsigned long ms = millis();
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      if (this->_watchdogTimeoutSeconds != 0 && millis() > ms + this->_watchdogTimeoutSeconds * 1000) {
+        // We have a watchdog set up - give up after it expires, either by setting up an AP or restarting
+        Serial.println();
+        
+        // If we have a soft AP configured, set it up now
+        if (this->_ap_ssid.length() != 0) {
+
+          setStatus(1010, Log::LOGLEVEL::Critical, this->_ap_ssid.c_str());
+          Log::logCritical("[%s] No connection after %d seconds, falling back to soft AP '%'...", this->name(), this->_watchdogTimeoutSeconds, this->_ap_ssid);
+          if (!this->setupSoftAP()) {
+            setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
+            Log::logCritical("[%s] Soft AP setup failed, restarting...", this->name());
+            Restart();
+          }
+
+        } else {
+
+          // No soft AP configured, give up
+          setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
+          Log::logCritical("[%s] No connection after %d seconds, restarting...", this->name(), this->_watchdogTimeoutSeconds);
+          Restart();
+
+        }
+      }
+
+      // If there is no watchdog timeout, connection is retried indefinitely
+      Log::logTrace("[%s] Still connecting...", this->name());
+      Serial.print(".");
+      setStatus(1000, Log::LOGLEVEL::Trace, ("Connecting " + String(1 + (millis() - ms) / 1000) /* + "/" + String(this->_watchdogTimeoutSeconds) */).c_str());
+      delay(500);
+    }
+
+    // A connection was made OR a soft AP was set up
+    Serial.println();
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      setStatus(2000, Log::LOGLEVEL::Information, "Connected");
+      Log::logInformation("[%s] Connected '%s' to '%s' (%s) at %s (MAC %s)", this->name(), WiFi.getHostname(), WiFi.SSID().c_str(), WiFi.BSSIDstr().c_str(), WiFi.localIP().toString().c_str(), WiFi.macAddress().c_str());
+    } else {
+      // We should have a soft IP here
+      setStatus(9000, Log::LOGLEVEL::Error, "NOT connected");
+      Log::logCritical("[%s] Cannot connect to WiFi", this->name());
+    }
   }
 }
 
@@ -96,12 +196,12 @@ void WifiComponent::loop()
 
   if (millis() > this->_lastCheckTime + this->_intervalMs)
   {
-    Log::logDebug("[%s] Checking connection...", name());
+    Log::logDebug("[%s] Checking connection...", this->name());
 
     // if WiFi is down, try reconnecting
     if (WiFi.status() != WL_CONNECTED)
     {
-      Log::logWarning("[%s] Disconnected! Reconnecting...", name());
+      Log::logWarning("[%s] Disconnected! Reconnecting...", this->name());
 
       this->connectToStrongest();
 
@@ -115,17 +215,22 @@ void WifiComponent::loop()
       } while (ms < this->_waitMs && WiFi.status() != WL_CONNECTED);
 
       if (WiFi.status() == WL_CONNECTED)
-        Log::logWarning("[%s] Reconnected after %d seconds to %s (%d dBm).", name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        Log::logWarning("[%s] Reconnected after %d seconds to %s (%d dBm).", this->name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
       else
-        Log::logWarning("[%s] *Not* reconnected!", name());
+        Log::logWarning("[%s] *Not* reconnected!", this->name());
     }
     else
-      Log::logDebug("[%s] Wifi connected to %s (%d dBm).", name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
+      Log::logDebug("[%s] Wifi connected to %s (%d dBm).", this->name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
 
     this->_lastCheckTime = millis();
   }
 }
 
+/**
+ * Perform a WiFi scan to determine the strongest BSSID for the configured SSID
+ * If a BSSID is found, try connecting to it and return it.
+ * If no BSSID if found, return ""
+ */
 String WifiComponent::connectToStrongest() {
   Log::logDebug("[%s] Starting WiFi-scan...", this->name());
 #ifdef ESP32
