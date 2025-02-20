@@ -27,8 +27,8 @@ WifiComponent::WifiComponent(
   // SSID/Password of a Soft-AP. Only active if ssid supplied, password is optional
   const char *ap_ssid, 
   const char *ap_password,
-  // If true, the soft-AP is only used when no connection is posssible with the "normal" ssid (or none is present)
-  bool fallbackOnly
+  // If false, the soft-AP is only used when no connection is posssible with the "normal" ssid (or none is present)
+  bool ap_permanent
 ) :
   Component("Wifi"),
   _hostname(hostname),
@@ -40,7 +40,7 @@ WifiComponent::WifiComponent(
   _watchdogTimeoutSeconds(watchdogTimeoutSeconds),
   _ap_ssid(ap_ssid),
   _ap_password(ap_password),
-  _fallbackOnly(fallbackOnly)
+  _fallbackOnly(!ap_permanent)
 {
 }
 
@@ -48,7 +48,7 @@ WifiComponent::WifiComponent(
  * Set up a soft AP. Return true if successful
  */
 bool WifiComponent::setupSoftAP() {
-  if (this->_ap_ssid.length() == 0) {
+  if (this->_ap_ssid.isEmpty()) {
     Log::logCritical("[%s] Cannot set up soft AP: no SSID configured", this->name());
     return false;
   }
@@ -99,7 +99,7 @@ void WifiComponent::setup()
 #endif
 
   // Handle soft AP setup when _fallbackOnly == false, i.e. always
-  if (this->_ap_ssid.length() != 0 && this->_fallbackOnly == false) {
+  if (!this->_ap_ssid.isEmpty() && this->_fallbackOnly == false) {
     // We have a PERMANENT soft AP configured
     // WiFi.mode(WIFI_AP_STA);
     this->setupSoftAP();
@@ -110,10 +110,10 @@ void WifiComponent::setup()
 
   String bssid = this->connectToStrongest();
 
-  if (bssid.length() == 0) {
+  if (bssid.isEmpty()) {
 
     // We were not able to find a network. See if we need to set up a soft access point
-    if (this->_ap_ssid.length() != 0) {
+    if (!this->_ap_ssid.isEmpty()) {
       // We have an AP SSID. Set it up:
       Log::logWarning("[%s] No networks '%s' found, setting up soft AP...", this->name(), this->_ssid.c_str());
       if (!this->setupSoftAP()) {
@@ -147,7 +147,7 @@ void WifiComponent::setup()
         Serial.println();
         
         // If we have a soft AP configured, set it up now
-        if (this->_ap_ssid.length() != 0) {
+        if (!this->_ap_ssid.isEmpty()) {
 
           setStatus(1010, Log::LOGLEVEL::Critical, this->_ap_ssid.c_str());
           Log::logCritical("[%s] No connection after %d seconds, falling back to soft AP '%'...", this->name(), this->_watchdogTimeoutSeconds, this->_ap_ssid);

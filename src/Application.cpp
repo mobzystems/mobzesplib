@@ -72,13 +72,20 @@ const char *Application::config(const char *key, const char *defaultValue) {
 void Application::setup() {
   Log::logDebug("[Application] Starting setup...");
 
+  String ap_ssid(this->config("wifi-ap-ssid", ""));
+  if (!ap_ssid.isEmpty())
+    ap_ssid.replace("#HOSTNAME#", this->hostname());
+
   Components::add(this->_wifi = new WifiComponent(
     _hostname, 
+    // STA: Connect to this SSID
     this->config("wifi-ssid"), this->config("wifi-password"), 
     Duration::parse(this->config("wifi-watchdog-timeout", "30")),
     Duration::parse(this->config("wifi-interval", "30")) * 1000,
     Duration::parse(this->config("wifi-wait", "20")) * 1000,
-    this->config("wifi-ap-ssid"), this->config("wifi-ap-password"), true // Fallback only soft AP
+    // Soft AP
+    ap_ssid.c_str(), this->config("wifi-ap-password"),
+    atoi(this->config("wifi-ap-permanent", "0")) != 0 // Permanent soft AP
   ));
 
   // Set up the time component with a default timeout
@@ -287,7 +294,7 @@ String Application::makeHtml(const char *file, const char *message) {
     html.replace("#MACADDRESS#", this->HtmlEncode(this->_macAddress.c_str()));
 
     String appTitle = this->_title;
-    if (this->_version.length() > 0)
+    if (!this->_version.isEmpty())
       appTitle += " v" + this->_version;
     html.replace("#APPTITLE#", appTitle);
 
@@ -332,7 +339,7 @@ void Application::enableFileEditor(
   if (readPath != NULL) {
     this->mapGet(readPath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else if (LittleFS.exists(path))
         server->send(200, "text/plain", this->readFile(path.c_str()));
@@ -344,7 +351,7 @@ void Application::enableFileEditor(
   if (writePath != NULL) {
     this->mapPost(writePath, [this](WEBSERVER *server) {
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else {
         auto s = server->arg("text");
@@ -357,7 +364,7 @@ void Application::enableFileEditor(
   if (editPath != NULL) {
     this->mapGet(editPath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else
         server->send(200, "text/html", this->makeHtml(path.c_str(), NULL));
@@ -367,7 +374,7 @@ void Application::enableFileEditor(
       auto path = server->arg("f");
       // Todo: base64
       auto s = server->arg("text");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else {
         auto s = server->arg("text");
@@ -380,7 +387,7 @@ void Application::enableFileEditor(
   if (dirPath != NULL) {
     this->mapGet(dirPath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else
         server->send(200, "text/plain", dir(path));
@@ -390,7 +397,7 @@ void Application::enableFileEditor(
   if (deletePath != NULL) {
     this->mapGet(deletePath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else if (deleteFile(path))
         server->send(200, "text/html");
@@ -402,7 +409,7 @@ void Application::enableFileEditor(
   if (mkdirPath != NULL) {
     this->mapGet(mkdirPath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else if (makeDirectory(path))
         server->send(200, "text/html");
@@ -414,7 +421,7 @@ void Application::enableFileEditor(
   if (rmdirPath != NULL) {
     this->mapGet(rmdirPath, [this](WEBSERVER *server) { 
       auto path = server->arg("f");
-      if (path.length() == 0)
+      if (path.isEmpty())
         server->send(400);
       else if (deleteDirectory(path))
         server->send(200, "text/html");
@@ -456,6 +463,7 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       "\r\nApplication: " + this->title() + 
       "\r\nVersion: " + this->version() + 
       "\r\nIP: " + WiFi.localIP().toString() + 
+      "\r\nAP: " + WiFi.softAPIP().toString() +
       // This is the IP of the MQTT Wifi client. When disconected, this can be anything :-/
       // \r\nClientIP: " + this->wifi()->wifiClient()->localIP().toString() +
       "\r\nRSSI: " + String(WiFi.RSSI()) + " dBm"
@@ -501,6 +509,6 @@ void Application::addU8Display(U8X8 *display) {
 }
 
 void Application::scheduleRestart(unsigned long delayMs) {
-  Log::logWarning("[Application] Scheduling restart after %lu ms", delayMs);
+  Log::logWarning("[Application] Scheduling restart in %lu ms", delayMs);
   _restartTimeMs = millis() + delayMs;
 }
