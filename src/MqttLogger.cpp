@@ -14,8 +14,10 @@ MqttLogger::MqttLogger(MqttComponent *mqtt, const char *topic, int max_size, Log
 #ifdef LOG
       Serial.println(String(">>> MQTT: ") + message);
 #endif
-      _backlog.push(String(message));
+      // Push message onto backlog, including timestamp
+      _backlog.push(Log::getTimeStamp() + message);
 
+      // Remove excess entries from backlog
       while ((int)_backlog.size() > _max_size)
         _backlog.pop();
     }

@@ -51,15 +51,23 @@ void Log::setTimezone(Timezone *timezone, const char *format)
   Log::timeFormat = format;
 }
 
+String Log::getTimeStamp()
+{
+  if (Log::timezone != NULL && Log::timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
+    return timezone->dateTime(timeFormat);
+  else
+    return emptyString;
+}
+
 void Log::va_logMessage(LOGLEVEL level, const char *format, va_list args)
 {
   char loc_buf[MAX_LOGMESSAGE_SIZE + 1] = "";
 
-  char *p = loc_buf;
+  char *p = stpcpy(loc_buf, getTimeStamp().c_str());
 
-  // Add time information if available
-  if (timezone != NULL && timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
-    p = stpcpy(p, timezone->dateTime(timeFormat).c_str());
+  // // Add time information if available
+  // if (timezone != NULL && timeFormat != NULL && timeStatus() != timeStatus_t::timeNotSet)
+  //   p = stpcpy(p, timezone->dateTime(timeFormat).c_str());
 
   // Add the log level information
   const char *lvl;

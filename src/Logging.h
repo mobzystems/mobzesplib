@@ -70,6 +70,8 @@ public:
   // Log a critical message
   static void logCritical(const char *format, ...);
 
+  static String getTimeStamp();
+
 protected:
   // Interal method to support logXXX shorthands
   static void va_logMessage(LOGLEVEL level, const char *format, va_list args);
