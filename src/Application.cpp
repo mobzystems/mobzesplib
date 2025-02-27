@@ -274,7 +274,7 @@ String Application::makeHtml(const char *file, const char *message) {
       body { font-family: helvetica, arial, sans-serif; margin: 0; padding: 0; height: 100%; }
       form { display: grid; grid-template-rows: auto 1fr auto auto; height: 100%; }
       div { margin: 0.25rem 0.5rem; }
-
+      input { width: 12em; }
       h1, h2, h3 { margin: 0.25rem 0; }
       #parent { position: relative; }
       textarea { position: absolute; top: 0; right: 0; bottom: 0; left: 0; text-wrap: nowrap; }
@@ -334,11 +334,11 @@ void Application::enableConfigEditor(const char *path) {
     if (t == "Save") {
       auto s = server->arg("text");
       writeFile(this->configFileName, s.c_str());
-      Log::logWarning("[Application] Configuration updated");
       server->send(200, F("text/html"), this->makeHtml(this->configFileName, "Contents were changed."));
+      Log::logWarning("[Application] Configuration updated");
     } else if (t == "Reset"|| t == "Restart") {
-      Log::logWarning("[Application] Restart requested");
       server->send(200, F("text/plain"), F("Restart requested."));
+      Log::logWarning("[Application] Restart requested");
       this->scheduleRestart(3000);
     } else {
       server->send(200, F("text/plain"), "GOT: " + t);
