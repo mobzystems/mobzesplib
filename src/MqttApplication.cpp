@@ -240,9 +240,9 @@ void MqttApplication::setup() {
       lastMs = ms;
 
       uint32_t freeSize = ESP.getFreeHeap();
-
-      Log::logInformation("Free: %ld - Loop count: %d (%d/s)", freeSize, this->_loopCount, loopSpeed);
-      this->publishProperty("free", String(freeSize).c_str());
+      uint32_t freePsram = ESP.getFreePsram();
+      Log::logInformation("Free: %ld / PSRAM %ld - Loop count: %d (%d/s)", freeSize, freePsram, this->_loopCount, loopSpeed);
+      this->publishProperty("free", (String(freeSize) + "/" + String(freePsram)).c_str());
       if (this->_loopCount > 1)
         this->publishProperty("loops", String(loopSpeed).c_str());
       this->_loopCount = 0;

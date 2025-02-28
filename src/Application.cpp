@@ -489,8 +489,14 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       F("\r\nBSSID: ") +  WiFi.BSSIDstr() +
       F("\r\nMAC: ") + WiFi.macAddress() +
       F("\r\nCPU: ") + this->chipModelName() +
+      F("\r\nRAM: ") + String(ESP.getHeapSize() / 1024) + "K" +
+      F("\r\nPSRAM: ") + String(ESP.getPsramSize() / 1024) + "K" +
+      F("\r\nPSRAM+: ") + String(esp_spiram_get_size() / 1024) + "K" +
+      F("\r\nFlash: ") + String(ESP.getFlashChipSize() / 1024) + "K" +
+      F("\r\nLittleFS: ") + String(LittleFS.usedBytes() / 1024) + " of " + String(LittleFS.totalBytes() / 1024) + "K" +
       F("\r\nBootUTC: ") + this->bootTimeUtcString() +
       F("\r\nUTC: ") + UTC.dateTime("Y-m-d H:i:s") + 
+      F("\r\nLocal time: ") + this->time()->TZ()->dateTime("Y-m-d H:i:s") + 
       F("\r\nUptime: ") + this->formatDuration(d)
     ;
 
