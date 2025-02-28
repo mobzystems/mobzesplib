@@ -477,6 +477,11 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
 
     Duration d(this->upTimeSeconds());
 
+#ifdef ESP8266
+    FSInfo info;
+    LittleFS.info(info);
+#endif
+
     String initialResponse = 
       String(F("Hostname: ")) + String(this->hostname()) + 
       F("\r\nApplication: ") + this->title() + 
@@ -489,11 +494,15 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       F("\r\nBSSID: ") +  WiFi.BSSIDstr() +
       F("\r\nMAC: ") + WiFi.macAddress() +
       F("\r\nCPU: ") + this->chipModelName() +
+      F("\r\nFlash: ") + String(ESP.getFlashChipSize() / 1024) + "K" +
+#ifdef ESP8266
+      F("\r\nLittleFS: ") + String(info.usedBytes / 1024) + " of " + String(info.totalBytes / 1024) + "K" +
+#else
       F("\r\nRAM: ") + String(ESP.getHeapSize() / 1024) + "K" +
       F("\r\nPSRAM: ") + String(ESP.getPsramSize() / 1024) + "K" +
       F("\r\nPSRAM+: ") + String(esp_spiram_get_size() / 1024) + "K" +
-      F("\r\nFlash: ") + String(ESP.getFlashChipSize() / 1024) + "K" +
       F("\r\nLittleFS: ") + String(LittleFS.usedBytes() / 1024) + " of " + String(LittleFS.totalBytes() / 1024) + "K" +
+#endif
       F("\r\nBootUTC: ") + this->bootTimeUtcString() +
       F("\r\nUTC: ") + UTC.dateTime("Y-m-d H:i:s") + 
       F("\r\nLocal time: ") + this->time()->TZ()->dateTime("Y-m-d H:i:s") + 
