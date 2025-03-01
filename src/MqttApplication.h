@@ -23,7 +23,8 @@ private:
   std::function<void(PubSubClient *client)> const _onMqttConnected;
   std::function<void(const char *topic, const byte *payload, unsigned int length)> const _onMqttReceived;
 
-#ifndef ESP8266
+  // MQTT over SSL supprt depends on a build flag
+#ifdef SUPPORT_MQTT_OVER_SSL
   WiFiClientSecure _wifiSecure;
 #endif
 
@@ -42,10 +43,5 @@ public:
   void publishProperty(const char *property, const char *value, bool retained = false);
 
   MqttLogComponent *mqttLog() { return this->_mqttLog; }
-  
-  // WiFiClientSecure *client() { return &this->_wifiSecure; }
-
-  // void onMqttConnected(void (*onConnected)()) { this->_onMqttConnected = onConnected; }
-  // void onMqttReceived(void (*onReceived)(const char *topic, const byte *payload, unsigned int length)) { this->_onMqttReceived = onReceived; }
 };
 #endif

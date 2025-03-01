@@ -19,7 +19,7 @@ MqttApplication::MqttApplication(
   _isFirstConnect(true),
   _onMqttConnected(onConnected),
   _onMqttReceived(onReceived)
-  #ifndef ESP8266
+  #ifdef SUPPORT_MQTT_OVER_SSL
   , _wifiSecure()
   #endif
 {
@@ -44,28 +44,30 @@ void MqttApplication::setup() {
 
   /*
     This part contains support for MQTT over SSL/TLS. *This does not work well on ESP8266*
-    because it requires a lot of memory and CPU. Therefore we DON'T support it on ESP8266.
+    because it requires a lot of memory and CPU. Even on ESP32 is's expensive in program size (120 Kb!)
 
-    TODO: Make this a build flag for ESP32 to save program memory
+    #define SUPPORT_MQTT_OVER_SSL to enable this code
   */
-#ifndef ESP8266
-  String mqttCertificate;
+  
+  // read config anyway to allow a warning
   const char *certificateFilename = this->config("mqtt-certificate");
   if (*certificateFilename) {
+#ifdef SUPPORT_MQTT_OVER_SSL
+    String mqttCertificate;
     Log::logInformation("[MqttApplication] Read certificate from '%s'", certificateFilename);
     mqttCertificate = this->readFile(certificateFilename);
-#ifdef ESP8266
+  #ifdef ESP8266
     BearSSL::X509List serverTrustedCA(mqttCertificate.c_str()); 
     this->_wifiSecure.setTrustAnchors(&serverTrustedCA);
-#else
+  #else
     this->_wifiSecure.setCACert(mqttCertificate.c_str());
-#endif
+  #endif
 
     wifi = &this->_wifiSecure;
-    // Serial.println(mqttCertificate);
-    // Log::logDebug("[MqttApplication] Certificate is '%s'", mqttCertificate.c_str());
-  }
+#else
+    Log::logWarning("[MqttApplication] SUPPORT_MQTT_OVER_SSL not #defined - configured certificate '%s' WILL NOT BE USED", certificateFilename);
 #endif
+  }
 
   // MQTT component
   this->addComponent(_mqtt = new MqttComponent(
@@ -129,7 +131,7 @@ void MqttApplication::setup() {
     Duration::parse(this->config("mqtt-keepalive", "0")),
     this->_onlinetopic.c_str(),
     "false"
-  #ifndef ESP8266
+  #ifdef SUPPORT_MQTT_OVER_SSL
     , mqttCertificate.c_str()
   #endif
   ));
