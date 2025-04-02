@@ -58,6 +58,8 @@ class Application {
     typedef struct FILESYSTEM_PREFIX {
       const char *prefix;
       FS *fileSystem;
+      std::function<uint64_t()> const usedBytes;
+      std::function<uint64_t()> const totalBytes;
     } FILESYSTEM_PREFIX;
     std::vector<FILESYSTEM_PREFIX> _fileSystems;
 
@@ -110,7 +112,8 @@ class Application {
     void mapPost(const char *path, std::function<void(WEBSERVER *)> const handler);
 
     // Add a file system with a prefix. The prefix / is already registered for LittleFS
-    void addFileSystem(const char *prefix, FS *fs);
+    void addFileSystem(const char *prefix, FS *fs, std::function<uint64_t()> const usedBytes, std::function<uint64_t()> const totalBytes);
+
     void enableConfigEditor(const char *path = "/config.sys");
     void enableFileEditor(const char *readPath = "/read", const char *writePath = "/write", const char *editPath = "/edit", const char *dirPath = "/dir", const char *deletePath = "/delete", const char *mkdirPath = "/mkdir", const char *rmdirPath = "/rmdir");
 

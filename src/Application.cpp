@@ -169,8 +169,8 @@ void Application::mapPost(const char *path, std::function<void(WEBSERVER *)> con
   this->webserver()->on(path, HTTP_POST, [this, handler]() { handler(this->webserver()); });
 }
 
-void Application::addFileSystem(const char *prefix, FS *fs) {
-  this->_fileSystems.push_back({ prefix, fs });
+void Application::addFileSystem(const char *prefix, FS *fs, std::function<uint64_t()> const usedBytes, std::function<uint64_t()> const totalBytes) {
+  this->_fileSystems.push_back({ prefix, fs, usedBytes, totalBytes });
 }
 
 void Application::getFileSystemForPath(const String &path, FS **fsOut, String *pathOut) {
@@ -554,6 +554,13 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
     LittleFS.info(info);
 #endif
 
+    // Set up other file system information first
+    String otherFileSystemInfo;
+    for (auto vfs: this->_fileSystems) {
+      otherFileSystemInfo += String(F("\r\n")) + vfs.prefix + F(": ") + String((vfs.usedBytes)() / 1024 /  1024) + " of " + String((vfs.totalBytes)() / 1024 / 1024) + "M";
+    }
+
+    // Compose the response
     String initialResponse = 
       String(F("Hostname: ")) + String(this->hostname()) + 
       F("\r\nApplication: ") + this->title() + 
@@ -576,6 +583,7 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       F("\r\nPSRAM+: ") + String(esp_spiram_get_size() / 1024) + "K" +
 #endif
       F("\r\nLittleFS: ") + String(LittleFS.usedBytes() / 1024) + " of " + String(LittleFS.totalBytes() / 1024) + "K" +
+      otherFileSystemInfo +
 #endif
       F("\r\nBootUTC: ") + this->bootTimeUtcString() +
       F("\r\nUTC: ") + UTC.dateTime("Y-m-d H:i:s") + 
