@@ -48,8 +48,21 @@ class Application {
 
     static Application *_app;
 
-    String readFile(const char *path);
-    
+    String readFile(const String &path, FS *fs = NULL);
+    bool writeFile(const String &path, const char *s, FS *fs = NULL);
+    bool deleteFile(const String &path, FS *fs = NULL);
+    bool makeDirectory(const String &path, FS *fs = NULL);
+    bool deleteDirectory(const String &path, FS *fs = NULL);
+    String dir(const String &path, FS *fs = NULL);
+
+    typedef struct FILESYSTEM_PREFIX {
+      const char *prefix;
+      FS *fileSystem;
+    } FILESYSTEM_PREFIX;
+    std::vector<FILESYSTEM_PREFIX> _fileSystems;
+
+    void getFileSystemForPath(const String &path, FS **fsOut, String *pathOut);
+
   public:
     // Constructor
     Application(const char *title, const char *version = "", uint16_t otaPortNumber = 80, const char *configuration = NULL);
@@ -96,6 +109,8 @@ class Application {
     void mapGet(const char *path, std::function<void(WEBSERVER *)> const handler);
     void mapPost(const char *path, std::function<void(WEBSERVER *)> const handler);
 
+    // Add a file system with a prefix. The prefix / is already registered for LittleFS
+    void addFileSystem(const char *prefix, FS *fs);
     void enableConfigEditor(const char *path = "/config.sys");
     void enableFileEditor(const char *readPath = "/read", const char *writePath = "/write", const char *editPath = "/edit", const char *dirPath = "/dir", const char *deletePath = "/delete", const char *mkdirPath = "/mkdir", const char *rmdirPath = "/rmdir");
 

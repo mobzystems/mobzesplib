@@ -169,13 +169,36 @@ void Application::mapPost(const char *path, std::function<void(WEBSERVER *)> con
   this->webserver()->on(path, HTTP_POST, [this, handler]() { handler(this->webserver()); });
 }
 
-String Application::readFile(const char *path) {
-  if (!LittleFS.exists(path)) {
+void Application::addFileSystem(const char *prefix, FS *fs) {
+  this->_fileSystems.push_back({ prefix, fs });
+}
+
+void Application::getFileSystemForPath(const String &path, FS **fsOut, String *pathOut) {
+  Log::logTrace("[Application] Matching path '%s'...", path.c_str());
+  for (auto fs : this->_fileSystems) {
+    if (path.startsWith(fs.prefix)) {
+      Log::logTrace("[Application] Using prefix '%s'", fs.prefix);
+      *fsOut = fs.fileSystem;
+      *pathOut = String(path.c_str() + strlen(fs.prefix) - 1);
+      return;
+    }
+  }
+  Log::logTrace("[Application] Defaulting to LittleFS");
+  *fsOut = &LittleFS;
+  *pathOut = path;
+}
+
+String Application::readFile(const String &p, FS *fs) {
+  String path(p);
+  if (fs == NULL)
+    this->getFileSystemForPath(p, &fs, &path);
+
+  if (!fs->exists(path)) {
     Log::logWarning("[Application] File '%s' does not exist, returning ''");
     return emptyString;
   }
 
-  auto f = LittleFS.open(path, "r");
+  auto f = fs->open(path, "r");
   if (!f)
     return emptyString; // TODO: this is not an empty file...
     
@@ -184,8 +207,12 @@ String Application::readFile(const char *path) {
   return s;
 }
 
-bool writeFile(const char *path, const char *s) {
-  auto f = LittleFS.open(path, "w");
+bool Application::writeFile(const String &p, const char *s, FS *fs) {
+  String path(p);
+  if (fs == NULL)
+    this->getFileSystemForPath(p, &fs, &path);
+
+  auto f = fs->open(path, "w");
   if (!f)
     return false;
   f.print(s);
@@ -193,16 +220,25 @@ bool writeFile(const char *path, const char *s) {
   return true;
 }
 
-bool deleteFile(const String &path) {
-  return LittleFS.remove(path);
+bool Application::deleteFile(const String &p, FS *fs) {
+  String path(p);
+  if (fs == NULL)
+    this->getFileSystemForPath(p, &fs, &path);
+  return fs->remove(path);
 }
 
-bool makeDirectory(const String &path) {
-  return LittleFS.mkdir(path);
+bool Application::makeDirectory(const String &p, FS *fs) {
+  String path(p);
+  if (fs == NULL)
+    this->getFileSystemForPath(p, &fs, &path);
+  return fs->mkdir(path);
 }
 
-bool deleteDirectory(const String &path) {
-  return LittleFS.rmdir(path); // Does remove() internally
+bool Application::deleteDirectory(const String &p, FS *fs) {
+  String path(p);
+  if (fs == NULL)
+    this->getFileSystemForPath(p, &fs, &path);
+  return fs->rmdir(path); // Does remove() internally
 }
 
 String Application::HtmlEncode(const char *s) {
@@ -212,13 +248,35 @@ String Application::HtmlEncode(const char *s) {
   return html;
 }
 
-String dir(const String &path) {
+String Application::dir(const String &p, FS *fs) {
   String output;
   output.reserve(2000);
 
-  #ifdef ESP32
+  // If we ask for the virtual root directory, add the virtual file system prefixes as directories
+  if (fs == NULL && p == "/") {
+    for (auto vfs : this->_fileSystems) {
+      output.concat(String(vfs.prefix).substring(0, strlen(vfs.prefix) - 1));
+      output.concat('\t'); output.concat('0');
+      output.concat('\t'); output.concat('/');
+    }
+  }
 
-  auto dir = LittleFS.open(path);
+  String path(p);
+  if (fs == NULL) {
+    if (p.endsWith("/"))
+      this->getFileSystemForPath(p, &fs, &path);
+    else {
+      // Make sure we match the directory name with a terminating slash
+      this->getFileSystemForPath(p + "/", &fs, &path);
+      if (path.length() > 1)
+        // Remove the slash again
+        path = path.substring(0, path.length() - 1);
+    }
+  }
+
+#ifdef ESP32
+
+  auto dir = fs->open(path);
   if (dir.isDirectory()) {
     File file = dir.openNextFile();
     while (file) {
@@ -237,9 +295,9 @@ String dir(const String &path) {
     }
   }
 
-  #else
+#else
 
-  auto dir = LittleFS.openDir(path);
+  auto dir = fs->openDir(path);
   while (dir.next()) {
     if (dir.isFile()) {
       output.concat(dir.fileName());
@@ -255,14 +313,14 @@ String dir(const String &path) {
     }
   }
 
-  #endif
+#endif
 
   return output;
 }
 
 String Application::makeHtml(const char *file, const char *message) {
     String html = LittleFS.exists(F("/wwwroot/edit-file.html"))
-      ? this->readFile("/wwwroot/edit-file.html")
+      ? this->readFile("/wwwroot/edit-file.html", &LittleFS)
       : F(R"###(
 <html>
   <head>
@@ -318,12 +376,14 @@ String Application::makeHtml(const char *file, const char *message) {
     html.replace(F("#APPTITLE#"), appTitle);
 
     // Do this one LAST otherwise it will also replace in s!
-    String s = this->readFile(file);
+    String s = this->readFile(file); // Read "virtual", i.e. based on prefix
     html.replace(F("#TEXT#"), this->HtmlEncode(s.c_str()));
 
     return html;
 }
 
+/// @brief Enable the configuration editor ON LITTLEFS
+/// @param path The url to listen on, by default /config.sys
 void Application::enableConfigEditor(const char *path) {
   this->mapGet(path, [this](WEBSERVER *server) {
     server->send(200, F("text/html"), this->makeHtml(this->configFileName, NULL));
@@ -333,7 +393,7 @@ void Application::enableConfigEditor(const char *path) {
     auto t = server->arg(F("submit"));
     if (t == "Save") {
       auto s = server->arg("text");
-      writeFile(this->configFileName, s.c_str());
+      writeFile(this->configFileName, s.c_str(), &LittleFS);
       server->send(200, F("text/html"), this->makeHtml(this->configFileName, "Contents were changed."));
       Log::logWarning("[Application] Configuration updated");
     } else if (t == "Reset"|| t == "Restart") {
@@ -347,9 +407,9 @@ void Application::enableConfigEditor(const char *path) {
 }
 
 void Application::enableFileEditor(
-  const char *readPath, 
-  const char *writePath, 
-  const char *editPath, 
+  const char *readPath,
+  const char *writePath,
+  const char *editPath,
   const char *dirPath,
   const char *deletePath,
   const char *mkdirPath,
@@ -357,24 +417,29 @@ void Application::enableFileEditor(
 ) {
   if (readPath != NULL) {
     this->mapGet(readPath, [this](WEBSERVER *server) {
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else if (LittleFS.exists(path))
-        server->send(200, F("text/plain"), this->readFile(path.c_str()));
-      else
-        server->send(404, F("text/plain"), "File not found: " + path);
+      else {
+        String path(f);
+        FS *fs;
+        this->getFileSystemForPath(f, &fs, &path);
+        if (fs->exists(path))
+          server->send(200, F("text/plain"), this->readFile(path.c_str(), fs));
+        else
+          server->send(404, F("text/plain"), "File not found: " + path);
+      }
     });
   }
 
   if (writePath != NULL) {
     this->mapPost(writePath, [this](WEBSERVER *server) {
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
       else {
         auto s = server->arg(F("text"));
-        writeFile(path.c_str(), s.c_str());
+        writeFile(f.c_str(), s.c_str());
         server->send(200);
       }
     });
@@ -382,70 +447,77 @@ void Application::enableFileEditor(
 
   if (editPath != NULL) {
     this->mapGet(editPath, [this](WEBSERVER *server) { 
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else
-        server->send(200, F("text/html"), this->makeHtml(path.c_str(), NULL));
+      else {
+        server->send(200, F("text/html"), this->makeHtml(f.c_str(), NULL));
+      }
     });
 
     this->mapPost(editPath, [this](WEBSERVER *server) {
-      auto path = server->arg("f");
+      auto f = server->arg("f");
       // Todo: base64
-      auto s = server->arg(F("text"));
-      if (path.isEmpty())
+      if (f.isEmpty())
         server->send(400);
       else {
         auto s = server->arg(F("text"));
-        writeFile(path.c_str(), s.c_str());
-        server->send(200, F("text/html"), this->makeHtml(path.c_str(), "Contents were changed."));
+        writeFile(f.c_str(), s.c_str());
+        server->send(200, F("text/html"), this->makeHtml(f.c_str(), "Contents were changed."));
       }
     });
   }
 
   if (dirPath != NULL) {
     this->mapGet(dirPath, [this](WEBSERVER *server) { 
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else
-        server->send(200, F("text/plain"), dir(path));
+      else {
+        server->send(200, F("text/plain"), dir(f));
+      }
     });
   }
 
   if (deletePath != NULL) {
     this->mapGet(deletePath, [this](WEBSERVER *server) { 
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else if (deleteFile(path))
-        server->send(200);
-      else
-        server->send(404); // Literally "File not found"
+      else { 
+        if (deleteFile(f))
+          server->send(200);
+        else
+          server->send(404); // Literally "File not found"
+      }
     });
   }
 
   if (mkdirPath != NULL) {
     this->mapGet(mkdirPath, [this](WEBSERVER *server) { 
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else if (makeDirectory(path))
-        server->send(200);
-      else
-        server->send(404); // Literally "File not found"
+      else {
+        if (makeDirectory(f))
+          server->send(200);
+         else
+          server->send(404); // Literally "File not found"
+      } 
     });
   }
 
   if (rmdirPath != NULL) {
     this->mapGet(rmdirPath, [this](WEBSERVER *server) { 
-      auto path = server->arg("f");
-      if (path.isEmpty())
+      auto f = server->arg("f");
+      if (f.isEmpty())
         server->send(400);
-      else if (deleteDirectory(path))
-        server->send(200);
-      else
-        server->send(404); // Literally "File not found"
+      else {
+        if (deleteDirectory(f))
+          server->send(200);
+        else
+          server->send(404); // Literally "File not found"
+      }
     });
   }
 }
@@ -469,7 +541,7 @@ String Application::formatDuration(const Duration &d) {
 }
 
 void Application::enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo) {
-  this->mapGet("/info", [this, postProcessInfo](WEBSERVER *server) {
+  this->mapGet(path, [this, postProcessInfo](WEBSERVER *server) {
     // if(!_webServer->authenticate("123", "456"))
     //   _webServer->requestAuthentication();
     // else
