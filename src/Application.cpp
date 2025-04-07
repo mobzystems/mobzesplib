@@ -406,6 +406,130 @@ void Application::enableConfigEditor(const char *path) {
   });
 }
 
+struct UPLOAD_STATUS {
+  bool uploading;
+  String filename;
+  size_t bytes_written;
+  HTTPUploadStatus last_status;
+  File file;
+  // Default constructor:
+  UPLOAD_STATUS(): uploading(false), filename(), bytes_written(0), last_status(UPLOAD_FILE_START) {}
+} upload_status;
+
+void Application::handleUpload(WEBSERVER *server)
+{
+  // Be careful not to access server->upload() because this handler may be called without a valid upload!
+  // First make sure we have a Content-Type of multipart/form-data.
+
+  // for (int i = 0; i < server->headers(); i++) {
+  //   Serial.printf("%s = %s\n", server->headerName(i).c_str(), server->header(i).c_str());
+  // }
+
+  // If we're not uploading yet, see if we should
+  if (!upload_status.uploading) {
+    // We can start the upload if we have a Content-Type=multipart/form-data; ... header
+    // Serial.println("Test upload");
+    if (server->hasHeader(F("Content-Type"))) {
+      // multipart/form-data; boundary=----WebKitFormBoundaryIRHXuVObqUxGPO5k
+      if (server->header(F("Content-Type")).startsWith(F("multipart/form-data;"))) {
+        // This is a possibly valid upload!
+        upload_status.uploading = true;
+        // Serial.println("Found upload");
+      }
+      // for (int i = 0; i < server->headers(); i++) {
+      //   Serial.printf("%s = %s\n", server->headerName(i).c_str(), server->header(i).c_str());
+      //   if (server->headerName(i) == "Content-Type") {
+      //     if (server->header(i).startsWith(F("multipart/form-data;"))) {
+      //       // This is a possibly valid upload!
+      //       upload_status.uploading = true;
+      //       Serial.println("Found upload");
+      //       break;
+      //     }
+      //   }
+      // }
+    }
+
+    if (!upload_status.uploading) {
+      // If we're not uploading here, we got a fishy request
+      Log::logWarning("[Application] Got upload without Content-Type=multipart/form-data");
+    }
+  }
+
+  // Are we uploading now?
+  if (upload_status.uploading) {
+    auto upload = server->upload();
+
+    switch (upload.status) {
+      case UPLOAD_FILE_START: // 0
+        {
+          // We need a f= parameter in the url
+          if (server->hasArg("f")) {
+            upload_status.filename = server->arg("f");
+            FS *fs;
+            String path_out;
+            this->getFileSystemForPath(upload_status.filename, &fs, &path_out);
+  
+            upload_status.file = fs->open(path_out, "w", true);
+  
+            Log::logInformation("[Application] Uploading to '%s'", upload_status.filename.c_str());
+          } else {
+            Log::logWarning("[Application] Upload: No f parameter specified, not saving");
+            // upload_status.filename = "/SD-card/" + upload.filename;
+          }
+          // Size is (or should be) 0. Create the file here, do not write anything
+          // Log::logInformation("Start upload: File name = '%s' (%s) '%s', current size = %zd, total size = %zd, status = %d",
+          //   upload.filename.c_str(), // The original file name. Cannot be trusted!
+          //   upload.type.c_str(), // The content type of the file, e.g. application/octet-stream
+          //   upload.name.c_str(), // Name of the form varaible, e.g. "file"
+          //   upload.currentSize, 
+          //   upload.totalSize,
+          //   upload.status
+          // );
+          upload_status.bytes_written = 0;
+        }
+        break;
+      case UPLOAD_FILE_WRITE: // 1
+        // We need to write upload.currentSize bytes from upload.buf
+        Log::logTrace("[Application] Write upload: current size = %zd, total size = %zd",
+          upload.currentSize, 
+          upload.totalSize
+        );
+        if (upload_status.filename.length() != 0) {
+          if (size_t written = upload_status.file.write(upload.buf, upload.currentSize) != upload.currentSize) {
+            Log::logWarning("[Application] Failed to write to %s: %zd of %zd bytes written", upload_status.filename.c_str(), written, upload.currentSize);
+          }
+        }
+        upload_status.bytes_written += upload.currentSize;
+        break;
+      case UPLOAD_FILE_END: // 2
+        // We still get a size here but we should NOT write!
+        if (upload_status.filename.length() != 0) {
+          upload_status.file.close();
+        }
+        if (upload_status.bytes_written == upload.totalSize) {
+          Log::logDebug("[Application] End upload: %zd bytes written", upload_status.bytes_written);
+        } else {
+          Log::logDebug("[Application] End upload: %zd bytes written (should be %zd)", upload_status.bytes_written, upload.totalSize);
+        }
+        // upload_status = UPLOAD_STATUS(); // DON'T - is done by response
+        break;
+      case UPLOAD_FILE_ABORTED: // 3
+        // The upload was aborted. Clean up
+        if (upload_status.filename.length() != 0) {
+          upload_status.file.close();
+        }
+        Log::logWarning("[Application] Abort upload: %zd bytes written", upload_status.bytes_written);
+        // upload_status = UPLOAD_STATUS(); // DON'T - is done by response
+        break;
+      default:
+        Log::logWarning("[Application] Unexpected upload status %d", upload.status);
+        break;
+    }
+    // Save the upload status
+    upload_status.last_status = upload.status;
+  }
+}
+
 void Application::enableFileEditor(
   const char *readPath,
   const char *writePath,
@@ -413,7 +537,8 @@ void Application::enableFileEditor(
   const char *dirPath,
   const char *deletePath,
   const char *mkdirPath,
-  const char *rmdirPath
+  const char *rmdirPath,
+  const char *uploadPath
 ) {
   if (readPath != NULL) {
     this->mapGet(readPath, [this](WEBSERVER *server) {
@@ -519,6 +644,42 @@ void Application::enableFileEditor(
           server->send(404); // Literally "File not found"
       }
     });
+  }
+
+  if (uploadPath != NULL) {
+    // Set webserver to collect these headers, otherwise upload won't work
+    const char *headersToCollect[] = { "Content-Type" };
+    this->webserver()->collectHeaders(headersToCollect, 1);
+
+    this->webserver()->on("/upload", HTTP_POST, [this]() {
+      auto server = this->webserver();
+      if (!upload_status.uploading) {
+        Log::logWarning("[Application] No valid upload found");
+        server->send(500, "text/plain", "Not uploaded");
+      } else {
+        switch (upload_status.last_status) {
+          case UPLOAD_FILE_END:
+            if (upload_status.filename.length() != 0) {
+              Log::logInformation("[Application] Upload to '%s' completed, %zd bytes written.", upload_status.filename.c_str(), upload_status.bytes_written);
+              server->send(200, "text/plain", "File received");
+            } else {
+              Log::logInformation("[Application] Upload completed but not saved.");
+              server->send(200, "text/plain", "File received but not saved");
+            }
+            break;
+          case UPLOAD_FILE_ABORTED:
+            Log::logWarning("[Application] Upload aborted");
+            server->send(500, "text/plain", "Upload aborted");
+            break;
+          default:
+            Log::logWarning("[Application] Unexpected upload status: %zd", upload_status.last_status);
+            server->send(500, "text/plain", (String("Unexpected upload status: ") + String(upload_status.last_status)).c_str());
+            break;
+        }
+      }
+      // Reset the upload status regardless of the outcome
+      upload_status = UPLOAD_STATUS();
+    }, [this]() { this->handleUpload(this->webserver()); });
   }
 }
 

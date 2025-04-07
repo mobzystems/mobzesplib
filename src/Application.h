@@ -63,7 +63,7 @@ class Application {
     } FILESYSTEM_PREFIX;
     std::vector<FILESYSTEM_PREFIX> _fileSystems;
 
-    void getFileSystemForPath(const String &path, FS **fsOut, String *pathOut);
+    void handleUpload(WEBSERVER *server);
 
   public:
     // Constructor
@@ -113,9 +113,11 @@ class Application {
 
     // Add a file system with a prefix. The prefix / is already registered for LittleFS
     void addFileSystem(const char *prefix, FS *fs, std::function<uint64_t()> const usedBytes, std::function<uint64_t()> const totalBytes);
+    // Get the file system and associated path for a file name
+    void getFileSystemForPath(const String &path, FS **fsOut, String *pathOut);
 
     void enableConfigEditor(const char *path = "/config.sys");
-    void enableFileEditor(const char *readPath = "/read", const char *writePath = "/write", const char *editPath = "/edit", const char *dirPath = "/dir", const char *deletePath = "/delete", const char *mkdirPath = "/mkdir", const char *rmdirPath = "/rmdir");
+    void enableFileEditor(const char *readPath = "/read", const char *writePath = "/write", const char *editPath = "/edit", const char *dirPath = "/dir", const char *deletePath = "/delete", const char *mkdirPath = "/mkdir", const char *rmdirPath = "/rmdir", const char *uploadPath = "/upload");
 
     void enableInfoPage(const char *path, std::function<void (String &)> const &postProcessInfo = NULL);
 
