@@ -115,7 +115,7 @@ void WifiComponent::setup()
   }
 
   // Without station WiFi, we don't have a BSSID
-  String bssid = haveStationWifi ?  this->connectToStrongest() : "";
+  String bssid = haveStationWifi ? this->connectToStrongest() : "";
 
   if (bssid.isEmpty()) {
 
@@ -164,6 +164,7 @@ void WifiComponent::setup()
           if (haveSoftAP) {
             // If we have a soft AP already, just warn
             Log::logCritical("[%s] No connection after %d seconds, relying on soft AP '%s'", this->name(), this->_watchdogTimeoutSeconds, this->_ap_ssid);
+            break;
           } else {
             // Attempt a soft AP
             setStatus(1010, Log::LOGLEVEL::Critical, this->_ap_ssid.c_str());
@@ -172,6 +173,8 @@ void WifiComponent::setup()
               setStatus(1010, Log::LOGLEVEL::Critical, "Giving up!");
               Log::logCritical("[%s] Soft AP setup failed, restarting...", this->name());
               Restart();
+            } else {
+              break;
             }
           }
 
@@ -214,7 +217,7 @@ void WifiComponent::loop()
     return;
 
   if (millis() > this->_lastCheckTime + this->_intervalMs) {
-    Log::logDebug("[%s] Checking connection...", this->name());
+    Log::logDebug("[%s] Checking connection... (%d)", this->name(), WiFi.status());
 
     // if WiFi is down, try reconnecting
     if (WiFi.status() != WL_CONNECTED)
@@ -232,12 +235,20 @@ void WifiComponent::loop()
         ms += 1000;
       } while (ms < this->_waitMs && WiFi.status() != WL_CONNECTED);
 
-      if (WiFi.status() == WL_CONNECTED)
+      if (WiFi.status() == WL_CONNECTED) {
         Log::logWarning("[%s] Reconnected after %d seconds to %s (%d dBm).", this->name(), ms / 1000, WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      else
+      } else {
         Log::logWarning("[%s] *Not* reconnected!", this->name());
-    } else
+      }
+    } else {
       Log::logDebug("[%s] Wifi connected to %s (%d dBm).", this->name(), WiFi.localIP().toString().c_str(), WiFi.RSSI());
+
+      // We have WiFi - if we have a non-permanent soft AP set up, DISCONNECT THAT HERE
+      if ((WiFi.getMode() & WIFI_AP) && this->_fallbackOnly) {
+        Log::logInformation("[%s] Disabling fallback-only soft AP", this->name());
+        WiFi.mode(WIFI_STA);
+      }
+    }
 
     this->_lastCheckTime = millis();
   }

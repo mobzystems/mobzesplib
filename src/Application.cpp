@@ -29,7 +29,7 @@ Application::Application(const char *title, const char *version, uint16_t otaPor
   _bootTimeLocal(0),
   _restartTimeMs((unsigned long)-1)
 {
-  // Set the singleton appliction object
+  // Set the singleton application object
   this->_app = this;
 
   Log::logDebug("[Application] Starting...");
