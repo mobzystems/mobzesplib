@@ -747,7 +747,8 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
 #else
       F("\r\nRAM: ") + String(ESP.getHeapSize() / 1024) + "K" +
       F("\r\nPSRAM: ") + String(ESP.getPsramSize() / 1024) + "K" +
-#ifndef ESP32_C3 // #define ESP32_C3 to exclude this call
+#ifndef CONFIG_IDF_TARGET_ESP32C3
+      // C3 does not support this call
       F("\r\nPSRAM+: ") + String(esp_spiram_get_size() / 1024) + "K" +
 #endif
       F("\r\nLittleFS: ") + String(LittleFS.usedBytes() / 1024) + " of " + String(LittleFS.totalBytes() / 1024) + "K" +
