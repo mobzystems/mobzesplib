@@ -469,8 +469,11 @@ void Application::handleUpload(WEBSERVER *server)
             String path_out;
             this->getFileSystemForPath(upload_status.filename, &fs, &path_out);
   
+          #ifdef ESP8266
+            upload_status.file = fs->open(path_out, "w");
+          #else
             upload_status.file = fs->open(path_out, "w", true);
-  
+          #endif
             Log::logInformation("[Application] Uploading to '%s'", upload_status.filename.c_str());
           } else {
             Log::logWarning("[Application] Upload: No f parameter specified, not saving");
@@ -648,8 +651,12 @@ void Application::enableFileEditor(
 
   if (uploadPath != NULL) {
     // Set webserver to collect these headers, otherwise upload won't work
+  #ifdef ESP8266
+    this->webserver()->collectHeaders(F("Content-Type"));
+  #else
     const char *headersToCollect[] = { "Content-Type" };
     this->webserver()->collectHeaders(headersToCollect, 1);
+  #endif
 
     this->webserver()->on("/upload", HTTP_POST, [this]() {
       auto server = this->webserver();
