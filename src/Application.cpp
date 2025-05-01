@@ -749,7 +749,8 @@ void Application::enableInfoPage(const char *path, std::function<void (String &)
       F("\r\nPSRAM: ") + String(ESP.getPsramSize() / 1024) + "K" +
 #ifndef CONFIG_IDF_TARGET_ESP32C3
       // C3 does not support this call
-      F("\r\nPSRAM+: ") + String(esp_spiram_get_size() / 1024) + "K" +
+      // ESP32 WROOM will crash on it, so protect with ESP.getPsramSize() for now, assuming PSRAM+ can only be present if PSRAM is
+      (ESP.getPsramSize() == 0 ? "" : ("\r\nPSRAM+: " + String(esp_spiram_get_size() / 1024) + "K")) +
 #endif
       F("\r\nLittleFS: ") + String(LittleFS.usedBytes() / 1024) + " of " + String(LittleFS.totalBytes() / 1024) + "K" +
       otherFileSystemInfo +
