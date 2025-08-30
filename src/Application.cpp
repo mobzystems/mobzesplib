@@ -249,15 +249,24 @@ String Application::HtmlEncode(const char *s) {
 }
 
 String Application::dir(const String &p, FS *fs) {
+  // The string that holds our output
   String output;
-  output.reserve(2000);
+
+  // We're expanding the output string by this block size:
+  const unsigned int BLOCKSIZE = 2000;
+
+  // Start with a single block:
+  unsigned int capacity = BLOCKSIZE;
+  output.reserve(capacity);
 
   // If we ask for the virtual root directory, add the virtual file system prefixes as directories
+  // Format: /prefix <tab> create-time (0) <tab> 0
   if (fs == NULL && p == "/") {
     for (auto vfs : this->_fileSystems) {
       output.concat(String(vfs.prefix).substring(0, strlen(vfs.prefix) - 1));
       output.concat('\t'); output.concat('0');
-      output.concat('\t'); output.concat('/');
+      output.concat('\t'); output.concat('0');
+      output.concat('\n');
     }
   }
 
@@ -280,14 +289,20 @@ String Application::dir(const String &p, FS *fs) {
   if (dir.isDirectory()) {
     File file = dir.openNextFile();
     while (file) {
+      // If the output string is nearing its capacity, increase the capacity
+      // 100 is an approximate maximum size of an entry
+      if (output.length() > capacity - 100) {
+        capacity += BLOCKSIZE;
+        output.reserve(capacity);
+      }
       if (file.isDirectory()) {
         output.concat('/'); output.concat(file.name());
         output.concat('\t'); output.concat('0');
-        output.concat('\t'); output.concat(file.getLastWrite());
+        output.concat('\t'); output.concat('0'); // output.concat(file.getLastWrite());
       } else {
         output.concat(file.name());
         output.concat('\t'); output.concat('0');
-        output.concat('\t'); output.concat(file.getLastWrite());
+        output.concat('\t'); output.concat('0'); // output.concat(file.getLastWrite());
         output.concat('\t'); output.concat(file.size());
       }
       output.concat('\n');
@@ -299,6 +314,12 @@ String Application::dir(const String &p, FS *fs) {
 
   auto dir = fs->openDir(path);
   while (dir.next()) {
+    // If the output string is nearing its capacity, increase the capacity
+    // 100 is an approximate maximum size of an entry
+    if (output.length() > capacity - 100) {
+      capacity += BLOCKSIZE;
+      output.reserve(capacity);
+    }
     if (dir.isFile()) {
       output.concat(dir.fileName());
       output.concat('\t'); output.concat(dir.fileCreationTime());
@@ -797,4 +818,14 @@ void Application::addU8Display(U8X8 *display) {
 void Application::scheduleRestart(unsigned long delayMs) {
   Log::logWarning("[Application] Scheduling restart in %lu ms", delayMs);
   _restartTimeMs = millis() + delayMs;
+}
+
+unsigned long Application::timeOperation(std::function<void()> func, const char *message) {
+  auto start_time = millis();
+  func();
+  auto duration = millis() - start_time;
+  if (message != NULL) {
+    Log::logDebug("[Application] %s: %lu ms", message, duration);
+  }
+  return duration;
 }

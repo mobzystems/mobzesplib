@@ -128,5 +128,7 @@ class Application {
 
     // Format a Duration as ....d, hh:mm:ss
     String formatDuration(const Duration &d);
+
+    unsigned long timeOperation(std::function<void()> func, const char *message = NULL);
 };
 #endif
